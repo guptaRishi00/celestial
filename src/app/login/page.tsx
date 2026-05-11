@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import LoginForm from "./LoginForm";
@@ -47,7 +48,9 @@ export default function LoginPage() {
 
       {/* ── Login Card ── */}
       <div className="relative z-10 w-full max-w-md mx-4">
-        <LoginForm />
+        <Suspense fallback={<div className="h-[500px] rounded-2xl border border-white/10 bg-[#0f0e0c]/95 flex items-center justify-center text-white/50 font-kobe">Loading...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   );
