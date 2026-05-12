@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
@@ -17,6 +18,7 @@ export default function LoginForm() {
   const [gender, setGender] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,16 +190,26 @@ export default function LoginForm() {
           <label htmlFor="login-password" className="text-xs text-white/40 font-kobe tracking-wide">
             Password <span className="text-hero-accent">*</span>
           </label>
-          <input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            minLength={6}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white font-kobe placeholder:text-white/20 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.07]"
-          />
+          <div className="relative">
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              minLength={6}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-10 text-sm text-white font-kobe placeholder:text-white/20 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.07]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
         {/* Error */}

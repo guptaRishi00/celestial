@@ -12,16 +12,16 @@ export default function Header() {
       .then((data) => {
         if (data.user) setUser(data.user);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const initials = user
     ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "";
 
   return (
@@ -34,6 +34,8 @@ export default function Header() {
             Celestial
           </span>
         </a>
+
+
 
         {/* Desktop actions */}
         <div className="hidden sm:flex items-center gap-3">
@@ -101,28 +103,24 @@ export default function Header() {
           aria-label="Toggle menu"
         >
           <span
-            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${
-              open ? "rotate-45 translate-y-[5px]" : ""
-            }`}
+            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "rotate-45 translate-y-[5px]" : ""
+              }`}
           />
           <span
-            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 ${
-              open ? "opacity-0 scale-x-0" : ""
-            }`}
+            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 ${open ? "opacity-0 scale-x-0" : ""
+              }`}
           />
           <span
-            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${
-              open ? "-rotate-45 -translate-y-[5px]" : ""
-            }`}
+            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "-rotate-45 -translate-y-[5px]" : ""
+              }`}
           />
         </button>
       </nav>
 
       {/* Mobile dropdown */}
       <div
-        className={`sm:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          open ? "max-h-60 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
-        }`}
+        className={`sm:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-60 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+          }`}
       >
         <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl px-5 py-4 shadow-lg shadow-black/10">
           {/* Chat */}
