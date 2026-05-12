@@ -62,10 +62,10 @@ export async function POST(request: Request) {
         gender: gender || null,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Signup error:", error);
     return Response.json(
-      { error: "Something went wrong. Please try again." },
+      { error: "Something went wrong. Please try again.", details: error.message || String(error) },
       { status: 500 }
     );
   }
