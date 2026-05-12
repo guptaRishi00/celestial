@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
@@ -88,14 +88,14 @@ Use these details naturally in conversation. Do NOT ask them again for informati
 
 export async function fetchAstrologyData(userProfile: any) {
   if (!userProfile?.dob || !userProfile?.birthTime) return null;
-  
+
   const apiKey = process.env.ASTROLOGY_API_KEY;
   if (!apiKey) return null;
 
   try {
     const [year, month, date] = userProfile.dob.split("-").map(Number);
     const [hours, minutes] = userProfile.birthTime.split(":").map(Number);
-    
+
     if (!year || !month || !date) return null;
 
     let latitude = 28.6139; // Delhi default
@@ -223,7 +223,7 @@ export async function POST(request: Request) {
           let title = "New Consultation";
           const firstUserMsg = updatedMessages.find(m => m.role === "user");
           if (firstUserMsg) {
-             title = firstUserMsg.content.substring(0, 40) + (firstUserMsg.content.length > 40 ? "..." : "");
+            title = firstUserMsg.content.substring(0, 40) + (firstUserMsg.content.length > 40 ? "..." : "");
           }
 
           if (activeChatId && ObjectId.isValid(activeChatId)) {
@@ -247,32 +247,39 @@ export async function POST(request: Request) {
       }
     };
 
-    // Call Gemini API
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) {
+    // Call OpenRouter API
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    if (!openRouterKey) {
       // Fallback response when no API key is configured
       const reply = getFallbackResponse(messages, userProfile);
       await saveHistory(reply);
       return Response.json({ reply, chatId: activeChatId });
     }
 
-    // Try Gemini API with streaming
+    // Try OpenRouter API with streaming
     try {
-      const genAI = new GoogleGenerativeAI(geminiKey);
-      const model = genAI.getGenerativeModel({
-        model: "gemini-3.1-flash-lite-preview",
-        systemInstruction: systemPrompt,
+      const openai = new OpenAI({
+        baseURL: 'https://openrouter.ai/api/v1',
+        apiKey: openRouterKey,
+        defaultHeaders: {
+          "HTTP-Referer": "http://localhost:3000",
+          "X-Title": "Astrology Chat",
+        }
       });
 
-      // Convert messages to Gemini format
-      const chatHistory = messages.slice(0, -1).map((msg: { role: string; content: string }) => ({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      }));
+      const apiMessages = [
+        { role: "system" as const, content: systemPrompt },
+        ...messages.map((msg: { role: string; content: string }) => ({
+          role: (msg.role === "user" ? "user" : "assistant") as "user" | "assistant",
+          content: msg.content,
+        }))
+      ];
 
-      const chat = model.startChat({ history: chatHistory });
-      const lastMessage = messages[messages.length - 1];
-      const result = await chat.sendMessageStream(lastMessage.content);
+      const stream = await openai.chat.completions.create({
+        model: "deepseek/deepseek-v4-flash",
+        messages: apiMessages,
+        stream: true,
+      });
 
       const encoder = new TextEncoder();
       let fullReply = "";
@@ -287,9 +294,9 @@ export async function POST(request: Request) {
             // Send chatId as the first chunk
             controller.enqueue(encoder.encode(JSON.stringify({ chatId: activeChatId }) + "\n"));
 
-            for await (const chunk of result.stream) {
+            for await (const chunk of stream) {
               if (closed) break;
-              const text = chunk.text();
+              const text = chunk.choices[0]?.delta?.content || "";
               if (text) {
                 fullReply += text;
                 try {
@@ -317,8 +324,8 @@ export async function POST(request: Request) {
         },
       });
     } catch (aiError) {
-      // If Gemini API fails, fall back to built-in responses
-      console.warn("Gemini API error, using fallback responses:", aiError);
+      // If OpenRouter API fails, fall back to built-in responses
+      console.warn("OpenRouter API error, using fallback responses:", aiError);
       const reply = getFallbackResponse(messages, userProfile);
       await saveHistory(reply);
       return Response.json({ reply, chatId: activeChatId });
@@ -332,7 +339,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Fallback responses when Gemini API is unavailable
+// Fallback responses when OpenRouter API is unavailable
 function getFallbackResponse(
   messages: { role: string; content: string }[],
   userProfile?: { name?: string; dob?: string; birthTime?: string; birthPlace?: string; gender?: string } | null

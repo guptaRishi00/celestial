@@ -10,20 +10,7 @@ export const metadata: Metadata = {
 
 export default function ChatPage() {
   return (
-    <main className="relative w-full min-h-screen overflow-hidden">
-      {/* ── Background ── */}
-      <Image
-        src="/night8.png"
-        alt="Celestial night sky"
-        fill
-        priority
-        quality={90}
-        className="object-cover object-center"
-      />
-
-      {/* Dark overlays */}
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="absolute inset-0 bg-linear-to-b from-black/40 via-transparent to-black/70" />
+    <main className="relative w-full min-h-screen overflow-hidden bg-black">
 
       {/* ── Content ── */}
       <div className="relative z-10 flex flex-col h-screen">
