@@ -1,5 +1,22 @@
 import { getDb } from "@/lib/mongodb";
 import { hashPassword, signToken, setAuthCookie } from "@/lib/auth";
+import { computeNatalChart } from "@/lib/astrology/chart";
+import { ObjectId } from "mongodb";
+
+async function computeAndStoreChart(userId: ObjectId, dob: string, birthTime: string, birthPlace?: string | null) {
+  if (!dob || !birthTime) return;
+  try {
+    const chart = await computeNatalChart({ dob, birthTime, birthPlace: birthPlace || undefined });
+    if (!chart) return;
+    const db = await getDb();
+    await db.collection("users").updateOne(
+      { _id: userId },
+      { $set: { natalChart: chart, natalChartComputedAt: new Date() } }
+    );
+  } catch (e) {
+    console.error("Chart compute failed:", e);
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -50,6 +67,12 @@ export async function POST(request: Request) {
       email: email.toLowerCase(),
     });
     await setAuthCookie(token);
+
+    // Compute natal chart in the background — does not block signup response.
+    // Chart will be ready by the time user starts chatting (usually 1-2 seconds).
+    if (dob && birthTime) {
+      void computeAndStoreChart(result.insertedId, dob, birthTime, birthPlace);
+    }
 
     return Response.json({
       success: true,
