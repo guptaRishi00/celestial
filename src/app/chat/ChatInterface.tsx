@@ -128,6 +128,12 @@ export default function ChatInterface() {
 
       const contentType = res.headers.get("content-type") || "";
 
+      // Server returned an error page (HTML) — bail out with a friendly message
+      // instead of rendering Next.js's error markup into the chat bubble.
+      if (!res.ok || contentType.includes("text/html")) {
+        throw new Error(`Chat API returned ${res.status}`);
+      }
+
       // Handle JSON responses (fallback, login required, errors)
       if (contentType.includes("application/json")) {
         const data = await res.json();
