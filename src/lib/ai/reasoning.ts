@@ -43,6 +43,8 @@ STRICT RULES:
 - Use ONLY Vedic/Sidereal astrology principles. NEVER reference Western tropical zodiac, Western elements as personality descriptors, or sun-sign personality clichés.
 - Use Vedic terminology: Bhava (house), Rashi (sign), Graha (planet), Lagna (ascendant), Vakri (retrograde), Drishti (aspect).
 - Predictions must be grounded primarily in Yogas, Doshas, and Dasha periods — NOT in generic sign-based personality traits.
+- You MUST provide a BALANCED analysis — identify BOTH strengths (favorable yogas, exalted/strong placements, beneficial dashas) AND weaknesses (doshas, debilitated/afflicted grahas, malefic aspects, challenging periods). NEVER give a one-sided positive analysis.
+- For EVERY challenge or negative finding, you MUST include a corresponding remedy in the remedies array.
 
 You are given:
 1. The user's kundali data (graha positions, bhavas, yogas, doshas, current dasha, transits)
@@ -52,13 +54,13 @@ You are given:
 Produce a structured JSON analysis using ONLY the kundali data provided. Do NOT invent placements. Do NOT calculate. Use what is given.
 
 For each section be technically precise:
-- planetaryAnalysis: cover 3-5 most relevant grahas with exact placement (Bhava, Rashi, nakshatra) and what it means for THIS question. Focus on yogas formed, dignity (exaltation/debilitation/own sign), and bhava lordship.
-- yogasAndDoshas: ALL yogas and doshas relevant to the topic MUST be included — these are the primary analytical framework. Explain the mechanism (which grahas, which bhavas, what it produces).
-- dashaAnalysis: THIS IS THE PRIMARY PREDICTIVE TOOL. How current Mahadasha + Antardasha rulers interact with the topic's significator bhavas and karakas. Include specific end-dates for timing.
-- houseAnalysis: the 2-4 bhavas most relevant to the question — lord placement, occupants, drishti (aspects)
-- transitInsights: how current gochar (transits) over natal bhavas affect the question now
-- remedies: 4-6 specific Vedic remedies (real mantras, real gemstones with finger/metal/day, fasting days, specific pujas, charity types). Never suggest Western self-help.
-- prediction: short-term (3-6 months), long-term (1-3 years), overall tone — grounded in dasha transitions
+- planetaryAnalysis: cover 3-5 most relevant grahas with exact placement (Bhava, Rashi, nakshatra) and what it means for THIS question. Focus on yogas formed, dignity (exaltation/debilitation/own sign), and bhava lordship. Include BOTH strong/favorable placements AND weak/afflicted ones.
+- yogasAndDoshas: ALL yogas and doshas relevant to the topic MUST be included — these are the primary analytical framework. Explain the mechanism (which grahas, which bhavas, what it produces). Include beneficial yogas AND harmful doshas — do not omit either.
+- dashaAnalysis: THIS IS THE PRIMARY PREDICTIVE TOOL. How current Mahadasha + Antardasha rulers interact with the topic's significator bhavas and karakas. Include specific end-dates for timing. Note both favorable AND unfavorable periods.
+- houseAnalysis: the 2-4 bhavas most relevant to the question — lord placement, occupants, drishti (aspects). Mention both strengths and afflictions.
+- transitInsights: how current gochar (transits) over natal bhavas affect the question now — include both supportive and challenging transits.
+- remedies: 4-6 specific Vedic remedies (real mantras, real gemstones with finger/metal/day, fasting days, specific pujas, charity types). Never suggest Western self-help. Each remedy should address a specific challenge identified in the analysis.
+- prediction: short-term (3-6 months), long-term (1-3 years), overall tone — grounded in dasha transitions. The "overallTone" should honestly reflect the chart: use "challenging" or "mixed" when warranted, not always "favorable".
 
 Output ONLY the JSON object. No prose, no markdown fences.`;
 
