@@ -147,11 +147,13 @@ export async function getDailyHoroscopes(): Promise<DailyHoroscopeEntry[] | null
       { upsert: true }
     );
 
-    // 2. Pre-generate all detailed horoscopes in the background
-    //    (don't block the response — fire and forget)
-    generateAndCacheAllDetailed(today).catch((e) =>
-      console.error("Background detailed horoscope generation failed:", e)
-    );
+    // 2. Pre-generate all detailed horoscopes before returning
+    //    First load of the day takes longer, but all "Read More" clicks are instant
+    try {
+      await generateAndCacheAllDetailed(today);
+    } catch (e) {
+      console.error("Detailed horoscope generation failed:", e);
+    }
 
     return horoscopes;
   } catch (error) {
