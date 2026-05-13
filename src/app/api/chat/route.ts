@@ -95,34 +95,41 @@ export async function POST(request: Request) {
     }
 
     let activeChatId = chatId;
+
+    // Create new chat document immediately so it appears in sidebar instantly
+    if (authUser && (!activeChatId || !ObjectId.isValid(activeChatId))) {
+      try {
+        const db = await getDb();
+        let title = "New Consultation";
+        const firstUserMsg = messages.find(m => m.role === "user");
+        if (firstUserMsg) {
+          title = firstUserMsg.content.substring(0, 40) + (firstUserMsg.content.length > 40 ? "..." : "");
+        }
+        const newChat = await db.collection("chats").insertOne({
+          userId: new ObjectId(authUser.userId),
+          title,
+          messages: [...messages],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        activeChatId = newChat.insertedId.toString();
+      } catch (e) {
+        console.error("Failed to create chat:", e);
+      }
+    }
+
     const saveHistory = async (replyText: string) => {
-      if (!authUser) return;
+      if (!authUser || !activeChatId) return;
       try {
         const db = await getDb();
         const updatedMessages = [
           ...messages,
           { id: Date.now().toString(), role: "assistant", content: replyText },
         ];
-        let title = "New Consultation";
-        const firstUserMsg = updatedMessages.find(m => m.role === "user");
-        if (firstUserMsg) {
-          title = firstUserMsg.content.substring(0, 40) + (firstUserMsg.content.length > 40 ? "..." : "");
-        }
-        if (activeChatId && ObjectId.isValid(activeChatId)) {
-          await db.collection("chats").updateOne(
-            { _id: new ObjectId(activeChatId), userId: new ObjectId(authUser.userId) },
-            { $set: { messages: updatedMessages, updatedAt: new Date() } }
-          );
-        } else {
-          const newChat = await db.collection("chats").insertOne({
-            userId: new ObjectId(authUser.userId),
-            title,
-            messages: updatedMessages,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-          activeChatId = newChat.insertedId.toString();
-        }
+        await db.collection("chats").updateOne(
+          { _id: new ObjectId(activeChatId), userId: new ObjectId(authUser.userId) },
+          { $set: { messages: updatedMessages, updatedAt: new Date() } }
+        );
       } catch (e) {
         console.error("Failed to save chat history:", e);
       }

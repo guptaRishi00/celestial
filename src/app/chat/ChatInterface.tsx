@@ -33,6 +33,15 @@ export default function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Optimistically add or update a chat session in the sidebar
+  const upsertChatSession = (chatId: string, title: string) => {
+    setChatSessions((prev) => {
+      const exists = prev.some(c => c._id === chatId);
+      if (exists) return prev;
+      return [{ _id: chatId, title, updatedAt: new Date().toISOString() }, ...prev];
+    });
+  };
+
   const fetchChatSessions = async () => {
     try {
       const res = await fetch("/api/chat/history");
@@ -147,7 +156,9 @@ export default function ChatInterface() {
 
         if (data.chatId && currentChatId !== data.chatId) {
           setCurrentChatId(data.chatId);
-          fetchChatSessions();
+          const firstMsg = updatedMessages.find(m => m.role === "user");
+          const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : "New Consultation";
+          upsertChatSession(data.chatId, title);
         }
 
         if (data.reply) {
@@ -186,7 +197,9 @@ export default function ChatInterface() {
                 const meta = JSON.parse(text.substring(0, newlineIdx));
                 if (meta.chatId && currentChatId !== meta.chatId) {
                   setCurrentChatId(meta.chatId);
-                  fetchChatSessions();
+                  const firstMsg = updatedMessages.find(m => m.role === "user");
+                  const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : "New Consultation";
+                  upsertChatSession(meta.chatId, title);
                 }
               } catch { }
               fullText += text.substring(newlineIdx + 1);
@@ -253,7 +266,9 @@ export default function ChatInterface() {
       const data = await res.json();
       if (data.chatId) {
         setCurrentChatId(data.chatId);
-        fetchChatSessions();
+        const firstMsg = currentMessages.find(m => m.role === "user");
+        const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : "New Consultation";
+        upsertChatSession(data.chatId, title);
       }
       if (data.reply) {
         const assistantMessage: Message = {
@@ -278,7 +293,7 @@ export default function ChatInterface() {
       )}
 
       {/* Sidebar */}
-      <div className={`absolute md:relative z-50 h-full w-64 flex flex-col bg-[#080808]/95 backdrop-blur-xl border-r border-white/5 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+      <div className={`fixed md:absolute md:relative z-50 inset-y-0 left-0 md:inset-auto h-full w-64 flex flex-col bg-[#080808]/95 backdrop-blur-xl border-r border-white/5 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
         <div className="p-4">
           <button
             onClick={startNewChat}
@@ -339,39 +354,40 @@ export default function ChatInterface() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full bg-transparent overflow-hidden relative">
         {/* Mobile header for sidebar toggle */}
-        <div className="md:hidden flex items-center p-3 border-b border-white/5 bg-black/20 backdrop-blur-md absolute top-0 w-full z-30">
-          <button onClick={() => setIsSidebarOpen(true)} className="text-white/60 p-2 hover:text-white transition-colors cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+        <div className="md:hidden flex items-center px-2 py-2 border-b border-white/5 bg-black/40 backdrop-blur-md absolute top-0 w-full z-30">
+          <button onClick={() => setIsSidebarOpen(true)} className="text-white/60 p-1.5 hover:text-white transition-colors cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
+          <span className="font-kobe text-xs text-white/40 ml-1">Pandit Shastri Ji</span>
         </div>
 
         {/* Messages container */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 pt-16 md:pt-6">
-          <div className="max-w-3xl mx-auto flex flex-col gap-4">
+        <div className="flex-1 overflow-y-auto px-2.5 sm:px-6 py-3 sm:py-6 pt-14 md:pt-6">
+          <div className="max-w-3xl mx-auto flex flex-col gap-2.5 sm:gap-4">
             {/* Welcome state */}
             {showWelcome && messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 sm:py-24 text-center">
+              <div className="flex flex-col items-center justify-center py-8 sm:py-24 text-center px-2">
                 {/* Pandit Avatar */}
-                <div className="relative mb-6">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border-2 border-hero-accent/40 flex items-center justify-center text-4xl shadow-[0_0_40px_rgba(196,161,255,0.2)]">
+                <div className="relative mb-4 sm:mb-6">
+                  <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border-2 border-hero-accent/40 flex items-center justify-center text-2xl sm:text-4xl shadow-[0_0_40px_rgba(196,161,255,0.2)]">
                     🙏
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-400 border-2 border-black" />
+                  <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-emerald-400 border-2 border-black" />
                 </div>
 
-                <h2 className="font-voyage text-2xl sm:text-3xl font-bold text-white mb-3">
+                <h2 className="font-voyage text-xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
                   Pandit Shastri Ji
                 </h2>
-                <p className="font-kobe text-sm sm:text-base text-white/40 max-w-md mb-8 leading-relaxed">
+                <p className="font-kobe text-xs sm:text-base text-white/40 max-w-md mb-5 sm:mb-8 leading-relaxed px-2">
                   Namaste! I am a Vedic astrologer with 35 years of experience.
                   Ask me about your kundali, rashifal, career, relationships, or
                   any life guidance.
                 </p>
 
                 {/* Suggestion chips */}
-                <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+                <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 max-w-lg">
                   {[
                     "🌟 Tell me about my kundali",
                     "💼 Career guidance",
@@ -385,7 +401,7 @@ export default function ChatInterface() {
                         setInput(suggestion);
                         inputRef.current?.focus();
                       }}
-                      className="rounded-full border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-2 text-xs sm:text-sm text-white/60 font-kobe tracking-wide transition-all duration-300 hover:bg-white/10 hover:text-white hover:border-hero-accent/30 hover:shadow-[0_0_15px_rgba(196,161,255,0.1)] cursor-pointer"
+                      className="rounded-full border border-white/10 bg-white/5 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-sm text-white/60 font-kobe tracking-wide transition-all duration-300 hover:bg-white/10 hover:text-white hover:border-hero-accent/30 hover:shadow-[0_0_15px_rgba(196,161,255,0.1)] cursor-pointer"
                     >
                       {suggestion}
                     </button>
@@ -401,15 +417,15 @@ export default function ChatInterface() {
 
             {/* Typing indicator */}
             {isLoading && (
-              <div className="flex items-start gap-3 max-w-[85%]">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border border-hero-accent/30 flex items-center justify-center text-base flex-shrink-0">
+              <div className="flex items-start gap-2 sm:gap-3 max-w-[90%] sm:max-w-[85%]">
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border border-hero-accent/30 flex items-center justify-center text-sm sm:text-base flex-shrink-0">
                   🙏
                 </div>
-                <div className="rounded-2xl rounded-tl-sm bg-white/[0.06] border border-white/8 backdrop-blur-sm px-5 py-3.5">
+                <div className="rounded-2xl rounded-tl-sm bg-white/[0.06] border border-white/8 backdrop-blur-sm px-3.5 py-2.5 sm:px-5 sm:py-3.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:300ms]" />
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:300ms]" />
                   </div>
                 </div>
               </div>
@@ -420,8 +436,8 @@ export default function ChatInterface() {
         </div>
 
         {/* Input bar */}
-        <div className="border-t border-white/8 bg-black/30 backdrop-blur-xl px-4 sm:px-6 py-4 relative z-10">
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
+        <div className="border-t border-white/8 bg-black/30 backdrop-blur-xl px-2.5 sm:px-6 py-2.5 sm:py-4 relative z-10">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 sm:gap-3">
             <div className="flex-1 relative">
               <input
                 ref={inputRef}
@@ -431,7 +447,7 @@ export default function ChatInterface() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask Pandit Ji anything..."
                 disabled={isLoading}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm px-5 py-3.5 pr-12 text-sm text-white font-kobe placeholder:text-white/25 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(196,161,255,0.08)] disabled:opacity-50"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm px-3.5 py-2.5 sm:px-5 sm:py-3.5 text-sm text-white font-kobe placeholder:text-white/25 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(196,161,255,0.08)] disabled:opacity-50"
                 id="chat-input"
               />
             </div>
@@ -439,22 +455,22 @@ export default function ChatInterface() {
               type="button"
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
-              className="flex items-center justify-center w-12 h-12 rounded-xl bg-hero-accent text-inverse-surface transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(196,161,255,0.4)] active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:shadow-none cursor-pointer"
+              className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-hero-accent text-inverse-surface transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(196,161,255,0.4)] active:scale-95 disabled:opacity-30 disabled:hover:scale-100 disabled:hover:shadow-none cursor-pointer flex-shrink-0"
               id="send-button"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                className="w-5 h-5"
+                className="w-4 h-4 sm:w-5 sm:h-5"
               >
                 <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.897 28.897 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
               </svg>
             </button>
           </div>
           {!user && (
-            <p className="max-w-3xl mx-auto mt-2 text-[11px] text-white/20 font-kobe tracking-wide text-center">
-              ✦ Free consultation for first 2 messages • Sign up for unlimited access
+            <p className="max-w-3xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/20 font-kobe tracking-wide text-center">
+              ✦ Free for 2 messages • Sign up for unlimited
             </p>
           )}
         </div>
