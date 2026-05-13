@@ -186,10 +186,9 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
   const ascDegInSign = ascLon - (ascSign - 1) * 30;
 
   // Extract 12 Placidus cusp longitudes for Bhava Chalit
-  const rawCusps: number[] = houses?.data?.cusps ?? [];
-  // houses_ex2 returns cusps[0] unused (1-indexed), cusps[1..12] = the 12 house cusps
-  const bhavaCusps: number[] = rawCusps.length > 12
-    ? rawCusps.slice(1, 13).map(c => ((c % 360) + 360) % 360)
+  // houses.data.houses is a 12-element tuple [house_1 .. house_12]
+  const bhavaCusps: number[] = houses?.data?.houses
+    ? [...houses.data.houses].map(c => ((c % 360) + 360) % 360)
     : [];
 
   const planets: PlanetPosition[] = [];
