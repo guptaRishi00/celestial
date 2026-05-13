@@ -1,29 +1,26 @@
-import sweph from "sweph";
+import SwissEph from "swisseph-wasm";
 import tzLookup from "tz-lookup";
 import { AYANAMSHA_MAP, NAKSHATRAS, SIGNS, type PlanetName } from "./constants";
 import type { AyanamshaKey, PlanetPosition, RawChartInput } from "./types";
 import type { RawPositions } from "./positions";
 
-const C = sweph.constants;
-
-let _lastSidMode = -1;
-function ensureInit(ayanamshaId: number) {
-  if (_lastSidMode === ayanamshaId) return;
-  sweph.set_sid_mode(ayanamshaId, 0, 0);
-  _lastSidMode = ayanamshaId;
+// ── Lazy singleton ─────────────────────────────────────────────────────────────
+// Initialise the WASM module once and reuse across requests.
+let _swe: SwissEph | null = null;
+async function getSwe(): Promise<SwissEph> {
+  if (!_swe) {
+    _swe = new SwissEph();
+    await _swe.initSwissEph();
+  }
+  return _swe;
 }
 
-const PLANET_IDS: Array<{ name: PlanetName; id: number }> = [
-  { name: "Sun",     id: C.SE_SUN },
-  { name: "Moon",    id: C.SE_MOON },
-  { name: "Mars",    id: C.SE_MARS },
-  { name: "Mercury", id: C.SE_MERCURY },
-  { name: "Jupiter", id: C.SE_JUPITER },
-  { name: "Venus",   id: C.SE_VENUS },
-  { name: "Saturn",  id: C.SE_SATURN },
-  // Rahu = mean lunar node. Ketu = Rahu + 180°
-  { name: "Rahu",    id: C.SE_MEAN_NODE },
-];
+let _lastSidMode = -1;
+function ensureInit(swe: SwissEph, ayanamshaId: number) {
+  if (_lastSidMode === ayanamshaId) return;
+  swe.set_sid_mode(ayanamshaId, 0, 0);
+  _lastSidMode = ayanamshaId;
+}
 
 function nakshatraFromLongitude(longitude: number): { index: number; pada: 1 | 2 | 3 | 4 } {
   const lon = ((longitude % 360) + 360) % 360;
@@ -126,6 +123,25 @@ function bhavaHouseFromCusps(longitude: number, cusps: number[]): number {
   return 1; // fallback — should not happen
 }
 
+// ── Planet IDs (Swiss Ephemeris numeric constants) ─────────────────────────────
+// These match the SE_* constants on the SwissEph instance.
+const PLANET_IDS: Array<{ name: PlanetName; id: number }> = [
+  { name: "Sun",     id: 0  /* SE_SUN */ },
+  { name: "Moon",    id: 1  /* SE_MOON */ },
+  { name: "Mars",    id: 4  /* SE_MARS */ },
+  { name: "Mercury", id: 2  /* SE_MERCURY */ },
+  { name: "Jupiter", id: 5  /* SE_JUPITER */ },
+  { name: "Venus",   id: 3  /* SE_VENUS */ },
+  { name: "Saturn",  id: 6  /* SE_SATURN */ },
+  // Rahu = mean lunar node. Ketu = Rahu + 180°
+  { name: "Rahu",    id: 10 /* SE_MEAN_NODE */ },
+];
+
+// Swiss Ephemeris flag constants (same values in both native and WASM)
+const SEFLG_SIDEREAL = 65536;
+const SEFLG_MOSEPH   = 4;
+const SEFLG_SPEED    = 256;
+
 export async function computePositionsSweph(input: RawChartInput): Promise<RawPositions | null> {
   if (!input.dob || !input.birthTime) return null;
   const [year, month, day] = input.dob.split("-").map(Number);
@@ -166,37 +182,50 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
     tzHours = resolved.offsetHours;
   }
 
+  // Initialise WASM Swiss Ephemeris
+  const swe = await getSwe();
+
   // Julian Day (UT)
   const ut = new Date(utcMs);
   const ymd = { y: ut.getUTCFullYear(), m: ut.getUTCMonth() + 1, d: ut.getUTCDate() };
   const fracHour = ut.getUTCHours() + ut.getUTCMinutes() / 60 + ut.getUTCSeconds() / 3600;
-  const jd = sweph.julday(ymd.y, ymd.m, ymd.d, fracHour, C.SE_GREG_CAL);
+  const jd = swe.julday(ymd.y, ymd.m, ymd.d, fracHour);
 
   // Resolve which Ayanamsha to use
   const ayanKey: AyanamshaKey = input.ayanamsha ?? "lahiri";
   const ayanId = AYANAMSHA_MAP[ayanKey]?.swephId ?? 1;
-  ensureInit(ayanId);
-  const flags = C.SEFLG_SIDEREAL | C.SEFLG_MOSEPH | C.SEFLG_SPEED;
+  ensureInit(swe, ayanId);
+  const flags = SEFLG_SIDEREAL | SEFLG_MOSEPH | SEFLG_SPEED;
 
   // Ascendant + Placidus house cusps (sidereal)
-  const houses = sweph.houses_ex2(jd, C.SEFLG_SIDEREAL, lat, lon, "P");
-  const ascLon = houses?.data?.points?.[0];
-  if (typeof ascLon !== "number") return null;
+  // houses_ex2 returns { cusps: Float64Array(13), ascmc: Float64Array(10) }
+  // cusps[1..12] = house cusps, cusps[0] is unused
+  // ascmc[0] = Ascendant longitude
+  const houses = swe.houses_ex2(jd, SEFLG_SIDEREAL, lat, lon, "P");
+  const ascLon = houses?.ascmc?.[0];
+  if (typeof ascLon !== "number" || !Number.isFinite(ascLon)) return null;
   const ascSign = Math.floor(((ascLon % 360) + 360) % 360 / 30) + 1;
   const ascDegInSign = ascLon - (ascSign - 1) * 30;
 
   // Extract 12 Placidus cusp longitudes for Bhava Chalit
-  // houses.data.houses is a 12-element tuple [house_1 .. house_12]
-  const bhavaCusps: number[] = houses?.data?.houses
-    ? [...houses.data.houses].map(c => ((c % 360) + 360) % 360)
+  // cusps[1..12] → array of 12 cusp longitudes
+  const bhavaCusps: number[] = houses?.cusps
+    ? Array.from(houses.cusps).slice(1, 13).map(c => ((c % 360) + 360) % 360)
     : [];
 
   const planets: PlanetPosition[] = [];
   for (const { name, id } of PLANET_IDS) {
-    const r = sweph.calc_ut(jd, id, flags);
-    if (!r?.data || r.flag < 0) continue;
-    const lonDeg = ((r.data[0] % 360) + 360) % 360;
-    const speed = r.data[3];
+    // calc_ut returns Float64Array [lon, lat, dist, lonSpeed, latSpeed, distSpeed]
+    // Throws on error (retFlag < 0)
+    let r: Float64Array;
+    try {
+      r = swe.calc_ut(jd, id, flags);
+    } catch {
+      continue;
+    }
+    if (!r || r.length < 4) continue;
+    const lonDeg = ((r[0] % 360) + 360) % 360;
+    const speed = r[3];
     const sign = Math.floor(lonDeg / 30) + 1;
     const degreeInSign = lonDeg - (sign - 1) * 30;
     const nak = nakshatraFromLongitude(lonDeg);
