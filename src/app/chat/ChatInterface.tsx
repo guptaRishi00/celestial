@@ -124,7 +124,6 @@ export default function ChatInterface() {
             content: m.content,
           })),
           chatId: currentChatId,
-          language,
         }),
       });
 
@@ -249,7 +248,6 @@ export default function ChatInterface() {
             content: m.content,
           })),
           chatId: currentChatId,
-          language,
         }),
       });
       const data = await res.json();
