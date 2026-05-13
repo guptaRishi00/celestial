@@ -5,95 +5,107 @@ import { getDailyHoroscopes } from "@/lib/horoscope";
 const baseSigns = [
   {
     name: "Aries",
-    date: "Mar 21 – Apr 19",
-    element: "Fire",
+    vedic: "Mesha",
+    date: "Apr 14 – May 14",
+    tattva: "Agni",
     icon: "/2.png",
     description: "Today brings a surge of fiery energy. Trust your instincts and take the lead on a new project that excites you.",
   },
   {
     name: "Taurus",
-    date: "Apr 20 – May 20",
-    element: "Earth",
+    vedic: "Vrishabha",
+    date: "May 15 – Jun 14",
+    tattva: "Prithvi",
     icon: "/1.png",
     description: "Patience is your greatest virtue today. Take time to enjoy the simple pleasures and ground yourself in nature.",
   },
   {
     name: "Gemini",
-    date: "May 21 – Jun 20",
-    element: "Air",
+    vedic: "Mithuna",
+    date: "Jun 15 – Jul 14",
+    tattva: "Vayu",
     icon: "/3.png",
     description: "Your communication skills are highlighted. Expect interesting conversations that could lead to exciting new ideas.",
   },
   {
     name: "Cancer",
-    date: "Jun 21 – Jul 22",
-    element: "Water",
+    vedic: "Karka",
+    date: "Jul 15 – Aug 14",
+    tattva: "Jala",
     icon: "/4.png",
     description: "Focus on your emotional well-being today. A quiet evening at home will provide the comfort and clarity you need.",
   },
   {
     name: "Leo",
-    date: "Jul 23 – Aug 22",
-    element: "Fire",
+    vedic: "Simha",
+    date: "Aug 15 – Sep 15",
+    tattva: "Agni",
     icon: "/1.png",
     description: "Your natural charisma shines bright. Step into the spotlight and share your creative vision with those around you.",
   },
   {
     name: "Virgo",
-    date: "Aug 23 – Sep 22",
-    element: "Earth",
+    vedic: "Kanya",
+    date: "Sep 16 – Oct 15",
+    tattva: "Prithvi",
     icon: "/2.png",
     description: "Attention to detail will pay off. Organize your space and thoughts to tackle today's tasks with unmatched efficiency.",
   },
   {
     name: "Libra",
-    date: "Sep 23 – Oct 22",
-    element: "Air",
+    vedic: "Tula",
+    date: "Oct 16 – Nov 14",
+    tattva: "Vayu",
     icon: "/3.png",
     description: "Balance is key today. Seek harmony in your relationships and don't be afraid to compromise for the greater good.",
   },
   {
     name: "Scorpio",
-    date: "Oct 23 – Nov 21",
-    element: "Water",
+    vedic: "Vrishchika",
+    date: "Nov 15 – Dec 14",
+    tattva: "Jala",
     icon: "/4.png",
     description: "Your intuition is deeply attuned. Trust your gut feelings regarding a complex situation that requires your focus.",
   },
   {
     name: "Sagittarius",
-    date: "Nov 22 – Dec 21",
-    element: "Fire",
+    vedic: "Dhanu",
+    date: "Dec 15 – Jan 13",
+    tattva: "Agni",
     icon: "/1.png",
     description: "Adventure calls! Embrace spontaneity and be open to learning something entirely new from an unexpected source.",
   },
   {
     name: "Capricorn",
-    date: "Dec 22 – Jan 19",
-    element: "Earth",
+    vedic: "Makara",
+    date: "Jan 14 – Feb 12",
+    tattva: "Prithvi",
     icon: "/2.png",
     description: "Discipline and focus are your allies today. Stay committed to your long-term goals and celebrate small milestones.",
   },
   {
     name: "Aquarius",
-    date: "Jan 20 – Feb 18",
-    element: "Air",
+    vedic: "Kumbha",
+    date: "Feb 13 – Mar 13",
+    tattva: "Vayu",
     icon: "/3.png",
     description: "Innovation is in the air. Your unique perspective will help solve a lingering problem in a highly unconventional way.",
   },
   {
     name: "Pisces",
-    date: "Feb 19 – Mar 20",
-    element: "Water",
+    vedic: "Meena",
+    date: "Mar 14 – Apr 13",
+    tattva: "Jala",
     icon: "/4.png",
     description: "Let your imagination flow. Creative pursuits will bring you immense joy and help you process your deepest emotions.",
   },
 ];
 
-const elementColors: Record<string, string> = {
-  Earth: "text-emerald-400",
-  Fire: "text-orange-400",
-  Air: "text-sky-400",
-  Water: "text-blue-400",
+const tattvaColors: Record<string, string> = {
+  Prithvi: "text-emerald-400",
+  Agni: "text-orange-400",
+  Vayu: "text-sky-400",
+  Jala: "text-blue-400",
 };
 
 export default async function ZodiacSection() {
@@ -150,7 +162,7 @@ export default async function ZodiacSection() {
           </p>
 
           <p className="font-kobe text-base sm:text-lg leading-relaxed text-white/50 max-w-lg mt-2">
-            Consult the stars to navigate your day. Here are your personalized cosmic insights based on the current planetary alignments.
+            Consult the grahas to navigate your day. Here are your personalized Jyotish insights based on current planetary alignments.
           </p>
         </div>
 
@@ -169,7 +181,7 @@ export default async function ZodiacSection() {
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 transition-transform duration-500 group-hover:scale-110">
                 <Image
                   src={sign.icon}
-                  alt={`${sign.name} zodiac symbol`}
+                  alt={`${sign.name} rashi symbol`}
                   width={96}
                   height={96}
                   quality={90}
@@ -180,8 +192,11 @@ export default async function ZodiacSection() {
               {/* Name & Date */}
               <div className="flex flex-col gap-1.5">
                 <h3 className="font-voyage text-2xl font-bold text-white tracking-wide">
-                  {sign.name}
+                  {sign.vedic}
                 </h3>
+                <span className="font-kobe text-xs text-white/60 tracking-wide">
+                  {sign.name}
+                </span>
                 <span className="font-kobe text-xs text-white/40 tracking-widest uppercase">
                   {sign.date}
                 </span>
@@ -189,10 +204,10 @@ export default async function ZodiacSection() {
 
               {/* Element tag */}
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-kobe tracking-[0.15em] uppercase ${elementColors[sign.element]}`}
+                className={`inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-kobe tracking-[0.15em] uppercase ${tattvaColors[sign.tattva]}`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                {sign.element}
+                {sign.tattva} Tattva
               </span>
 
               {/* Description */}

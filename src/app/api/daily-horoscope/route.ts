@@ -19,12 +19,15 @@ export async function GET() {
       }
     });
 
-    const prompt = `You are an expert Vedic astrologer. Generate today's daily horoscope for all 12 zodiac signs. 
+    const prompt = `You are an expert Vedic astrologer (Jyotishi). Generate today's daily rashi phal (horoscope) for all 12 rashis based on current graha gochar (planetary transits) using Sidereal/Vedic principles.
+
+IMPORTANT: Base your readings on Vedic Jyotish concepts — Rashi lords, current graha transits (gochar), nakshatras, and dasha influences. Do NOT use Western sun-sign personality clichés like "Aries are natural leaders" or element-based descriptions.
+
 Return ONLY a valid JSON array where each item has this exact structure:
 [
   {
     "name": "Aries",
-    "description": "Today's horoscope text here... (around 2 sentences)"
+    "description": "Today's Vedic rashi phal here... (around 2 sentences, referencing graha influences)"
   },
   ...
 ]

@@ -7,27 +7,27 @@ import Footer from "../../components/Footer/Footer";
 // We need a helper to get sign data (icon, element, date)
 const getSignInfo = (signName: string) => {
   const signs = [
-    { name: "Aries", date: "Mar 21 – Apr 19", element: "Fire", icon: "/2.png" },
-    { name: "Taurus", date: "Apr 20 – May 20", element: "Earth", icon: "/1.png" },
-    { name: "Gemini", date: "May 21 – Jun 20", element: "Air", icon: "/3.png" },
-    { name: "Cancer", date: "Jun 21 – Jul 22", element: "Water", icon: "/4.png" },
-    { name: "Leo", date: "Jul 23 – Aug 22", element: "Fire", icon: "/1.png" },
-    { name: "Virgo", date: "Aug 23 – Sep 22", element: "Earth", icon: "/2.png" },
-    { name: "Libra", date: "Sep 23 – Oct 22", element: "Air", icon: "/3.png" },
-    { name: "Scorpio", date: "Oct 23 – Nov 21", element: "Water", icon: "/4.png" },
-    { name: "Sagittarius", date: "Nov 22 – Dec 21", element: "Fire", icon: "/1.png" },
-    { name: "Capricorn", date: "Dec 22 – Jan 19", element: "Earth", icon: "/2.png" },
-    { name: "Aquarius", date: "Jan 20 – Feb 18", element: "Air", icon: "/3.png" },
-    { name: "Pisces", date: "Feb 19 – Mar 20", element: "Water", icon: "/4.png" },
+    { name: "Aries", vedic: "Mesha", date: "Apr 14 – May 14", tattva: "Agni", icon: "/2.png" },
+    { name: "Taurus", vedic: "Vrishabha", date: "May 15 – Jun 14", tattva: "Prithvi", icon: "/1.png" },
+    { name: "Gemini", vedic: "Mithuna", date: "Jun 15 – Jul 14", tattva: "Vayu", icon: "/3.png" },
+    { name: "Cancer", vedic: "Karka", date: "Jul 15 – Aug 14", tattva: "Jala", icon: "/4.png" },
+    { name: "Leo", vedic: "Simha", date: "Aug 15 – Sep 15", tattva: "Agni", icon: "/1.png" },
+    { name: "Virgo", vedic: "Kanya", date: "Sep 16 – Oct 15", tattva: "Prithvi", icon: "/2.png" },
+    { name: "Libra", vedic: "Tula", date: "Oct 16 – Nov 14", tattva: "Vayu", icon: "/3.png" },
+    { name: "Scorpio", vedic: "Vrishchika", date: "Nov 15 – Dec 14", tattva: "Jala", icon: "/4.png" },
+    { name: "Sagittarius", vedic: "Dhanu", date: "Dec 15 – Jan 13", tattva: "Agni", icon: "/1.png" },
+    { name: "Capricorn", vedic: "Makara", date: "Jan 14 – Feb 12", tattva: "Prithvi", icon: "/2.png" },
+    { name: "Aquarius", vedic: "Kumbha", date: "Feb 13 – Mar 13", tattva: "Vayu", icon: "/3.png" },
+    { name: "Pisces", vedic: "Meena", date: "Mar 14 – Apr 13", tattva: "Jala", icon: "/4.png" },
   ];
   return signs.find(s => s.name.toLowerCase() === signName.toLowerCase());
 };
 
-const elementColors: Record<string, string> = {
-  Earth: "text-emerald-400",
-  Fire: "text-orange-400",
-  Air: "text-sky-400",
-  Water: "text-blue-400",
+const tattvaColors: Record<string, string> = {
+  Prithvi: "text-emerald-400",
+  Agni: "text-orange-400",
+  Vayu: "text-sky-400",
+  Jala: "text-blue-400",
 };
 
 export default async function DetailedHoroscopePage({ params }: { params: Promise<{ sign: string }> }) {
@@ -74,14 +74,18 @@ export default async function DetailedHoroscopePage({ params }: { params: Promis
             </div>
             
             <div className="flex flex-col text-center sm:text-left gap-3">
-              <span className={`inline-flex items-center gap-1.5 w-fit mx-auto sm:mx-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-kobe tracking-[0.15em] uppercase ${elementColors[signInfo.element]}`}>
+              <span className={`inline-flex items-center gap-1.5 w-fit mx-auto sm:mx-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-kobe tracking-[0.15em] uppercase ${tattvaColors[signInfo.tattva]}`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                {signInfo.element}
+                {signInfo.tattva} Tattva
               </span>
               
               <h1 className="font-voyage font-bold text-5xl sm:text-6xl text-white tracking-wide">
-                {signInfo.name}
+                {signInfo.vedic}
               </h1>
+
+              <p className="font-kobe text-lg text-white/60">
+                {signInfo.name} Rashi
+              </p>
               
               <p className="font-kobe text-sm text-white/40 tracking-widest uppercase">
                 {signInfo.date}

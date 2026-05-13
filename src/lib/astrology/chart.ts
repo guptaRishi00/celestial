@@ -3,6 +3,7 @@ import {
   HOUSE_MEANINGS,
   NAKSHATRAS,
   SIGNS,
+  SIGNS_VEDIC,
   SIGN_LORD,
   TOPIC_HOUSES,
   TOPIC_PLANETS,
@@ -94,25 +95,27 @@ export async function computeNatalChart(input: RawChartInput): Promise<NatalChar
   };
 }
 
-/** Build a compact text digest of the chart for LLM prompting. */
+/** Build a compact text digest of the chart for LLM prompting. Uses Vedic Jyotish terminology. */
 export function buildChartDigest(chart: NatalChart, transits?: TransitInfo | null): ChartDigest {
   const ascName = chart.ascendant.signName;
+  const ascVedic = SIGNS_VEDIC[chart.ascendant.sign - 1];
   const moonNak = NAKSHATRAS[chart.planets.find(p => p.name === "Moon")!.nakshatraIndex];
   const sunNak = NAKSHATRAS[chart.planets.find(p => p.name === "Sun")!.nakshatraIndex];
   const ayanLabel = AYANAMSHA_MAP[chart.ayanamsha]?.label ?? chart.ayanamsha;
 
   const identity =
-    `${ascName} lagna (ascendant at ${chart.ascendant.degreeInSign.toFixed(1)}°). ` +
-    `Moon in ${SIGNS[chart.moonSign - 1]} (Chandra Rashi), nakshatra ${moonNak.name}. ` +
-    `Sun in ${SIGNS[chart.sunSign - 1]} (Surya Rashi), nakshatra ${sunNak.name}. ` +
-    `Ayanamsha: ${ayanLabel}.`;
+    `${ascVedic} (${ascName}) Lagna at ${chart.ascendant.degreeInSign.toFixed(1)}°. ` +
+    `Chandra Rashi: ${SIGNS_VEDIC[chart.moonSign - 1]} (${SIGNS[chart.moonSign - 1]}), nakshatra ${moonNak.name}. ` +
+    `Surya Rashi: ${SIGNS_VEDIC[chart.sunSign - 1]} (${SIGNS[chart.sunSign - 1]}), nakshatra ${sunNak.name}. ` +
+    `Ayanamsha: ${ayanLabel}. House system: Whole Sign (Rashi-based).`;
 
   const planets = chart.planets.map(p => {
-    const retro = p.retrograde ? " [R]" : "";
+    const retro = p.retrograde ? " [Vakri]" : "";
+    const vedicSign = SIGNS_VEDIC[p.sign - 1];
     const bhava = p.bhavaHouse != null && p.bhavaHouse !== p.house
-      ? `, Bhava Chalit House ${p.bhavaHouse}`
+      ? `, Bhava Chalit Bhava ${p.bhavaHouse}`
       : "";
-    return `${p.name} in ${p.signName} (House ${p.house}${bhava}, ${p.degreeInSign.toFixed(1)}°) — ${NAKSHATRAS[p.nakshatraIndex].name} nakshatra, Pada ${p.nakshatraPada}, ruled by ${NAKSHATRAS[p.nakshatraIndex].lord}${retro}`;
+    return `${p.name} (Graha) in ${vedicSign}/${p.signName} Rashi (Bhava ${p.house}${bhava}, ${p.degreeInSign.toFixed(1)}°) — ${NAKSHATRAS[p.nakshatraIndex].name} nakshatra, Pada ${p.nakshatraPada}, ruled by ${NAKSHATRAS[p.nakshatraIndex].lord}${retro}`;
   });
 
   const planetsByHouse: Record<number, string[]> = {};
@@ -123,7 +126,7 @@ export function buildChartDigest(chart: NatalChart, transits?: TransitInfo | nul
   for (let h = 1; h <= 12; h++) {
     const lord = chart.houseLords[h];
     const occupants = planetsByHouse[h]?.length ? `occupied by ${planetsByHouse[h].join(", ")}` : "no occupants";
-    houseSummary.push(`House ${h} (${HOUSE_MEANINGS[h]}): lord is ${lord} (sitting in House ${chart.planets.find(p => p.name === lord)?.house ?? "?"}), ${occupants}`);
+    houseSummary.push(`Bhava ${h} (${HOUSE_MEANINGS[h]}): lord is ${lord} (sitting in Bhava ${chart.planets.find(p => p.name === lord)?.house ?? "?"}), ${occupants}`);
   }
 
   const yogas = chart.yogas.map(y => `${y.name} [${y.type}, ${y.strength}]: ${y.description}`);
@@ -211,8 +214,40 @@ export function relevantChartFor(chart: NatalChart, topic: string, transits?: Tr
     for (const h of houses) {
       const inThisHouse = transits.planets.filter(p => p.house === h);
       if (inThisHouse.length > 0) {
-        transitImpact.push(`Currently transiting your ${h}${suffix(h)} house: ${inThisHouse.map(p => p.name).join(", ")}`);
+        transitImpact.push(`Currently transiting your ${h}${suffix(h)} bhava: ${inThisHouse.map(p => p.name).join(", ")}`);
       }
+    }
+  }
+
+  // ── Dasha–topic interaction (Jyotish predictive priority) ──
+  // Analyze how current Maha/Antar dasha lords relate to this topic's houses and karakas.
+  const maha = chart.dashas.current.maha;
+  const antar = chart.dashas.current.antar;
+  const pratyantar = chart.dashas.current.pratyantar;
+
+  const dashaLords = [maha.lord, antar.lord, ...(pratyantar ? [pratyantar.lord] : [])] as PlanetName[];
+  const dashaTopicInteraction: string[] = [];
+
+  for (const lord of dashaLords) {
+    const lordPos = chart.planets.find(p => p.name === lord);
+    if (!lordPos) continue;
+    const level = lord === maha.lord ? "Mahadasha" : lord === antar.lord ? "Antardasha" : "Pratyantar";
+
+    // Does the dasha lord sit in a topic-relevant house?
+    if (houses.includes(lordPos.house)) {
+      dashaTopicInteraction.push(`${level} lord ${lord} sits in Bhava ${lordPos.house} — directly activating the ${key} area.`);
+    }
+
+    // Does the dasha lord rule a topic-relevant house?
+    for (const h of houses) {
+      if (chart.houseLords[h] === lord) {
+        dashaTopicInteraction.push(`${level} lord ${lord} rules Bhava ${h} (${HOUSE_MEANINGS[h]}), bringing its significations into active karma period.`);
+      }
+    }
+
+    // Is the dasha lord itself a karaka for this topic?
+    if (karakas.includes(lord)) {
+      dashaTopicInteraction.push(`${level} lord ${lord} is a natural karaka (significator) for ${key} — strongly colours this dasha period.`);
     }
   }
 
@@ -223,6 +258,7 @@ export function relevantChartFor(chart: NatalChart, topic: string, transits?: Tr
     yogas: relevantYogas,
     doshas: relevantDoshas,
     currentDasha: chart.dashas.current,
+    dashaTopicInteraction,
     transitImpact,
   };
 }

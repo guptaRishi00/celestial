@@ -399,10 +399,10 @@ export default function ProfileContent() {
             </div>
             <div className="flex-1">
               <span className="text-sm text-white/80 font-kobe block">
-                Explore Zodiac Signs
+                Explore Rashis
               </span>
               <span className="text-[11px] text-white/25 font-kobe">
-                Learn about rashis and nakshatras
+                Daily rashi phal and nakshatra insights
               </span>
             </div>
             <svg
