@@ -1,16 +1,16 @@
 import sweph from "sweph";
 import tzLookup from "tz-lookup";
-import { NAKSHATRAS, SIGNS, type PlanetName } from "./constants";
-import type { PlanetPosition, RawChartInput } from "./types";
+import { AYANAMSHA_MAP, NAKSHATRAS, SIGNS, type PlanetName } from "./constants";
+import type { AyanamshaKey, PlanetPosition, RawChartInput } from "./types";
 import type { RawPositions } from "./positions";
 
 const C = sweph.constants;
 
-let _swephInit = false;
-function ensureInit() {
-  if (_swephInit) return;
-  sweph.set_sid_mode(C.SE_SIDM_LAHIRI, 0, 0);
-  _swephInit = true;
+let _lastSidMode = -1;
+function ensureInit(ayanamshaId: number) {
+  if (_lastSidMode === ayanamshaId) return;
+  sweph.set_sid_mode(ayanamshaId, 0, 0);
+  _lastSidMode = ayanamshaId;
 }
 
 const PLANET_IDS: Array<{ name: PlanetName; id: number }> = [
@@ -106,6 +106,26 @@ async function geocodeNominatim(place: string): Promise<{ lat: number; lon: numb
   }
 }
 
+/**
+ * Determine the Bhava Chalit (Placidus) house for a sidereal longitude, given 12 cusp longitudes.
+ * Cusps may wrap around 360°, so the comparison handles that.
+ */
+function bhavaHouseFromCusps(longitude: number, cusps: number[]): number {
+  const lon = ((longitude % 360) + 360) % 360;
+  for (let i = 0; i < 12; i++) {
+    const start = ((cusps[i] % 360) + 360) % 360;
+    const end = ((cusps[(i + 1) % 12] % 360) + 360) % 360;
+    if (end > start) {
+      // Normal case: cusp range doesn't wrap 360°
+      if (lon >= start && lon < end) return i + 1;
+    } else {
+      // Wraps around 360° (e.g., 350° → 10°)
+      if (lon >= start || lon < end) return i + 1;
+    }
+  }
+  return 1; // fallback — should not happen
+}
+
 export async function computePositionsSweph(input: RawChartInput): Promise<RawPositions | null> {
   if (!input.dob || !input.birthTime) return null;
   const [year, month, day] = input.dob.split("-").map(Number);
@@ -152,15 +172,25 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
   const fracHour = ut.getUTCHours() + ut.getUTCMinutes() / 60 + ut.getUTCSeconds() / 3600;
   const jd = sweph.julday(ymd.y, ymd.m, ymd.d, fracHour, C.SE_GREG_CAL);
 
-  ensureInit();
+  // Resolve which Ayanamsha to use
+  const ayanKey: AyanamshaKey = input.ayanamsha ?? "lahiri";
+  const ayanId = AYANAMSHA_MAP[ayanKey]?.swephId ?? 1;
+  ensureInit(ayanId);
   const flags = C.SEFLG_SIDEREAL | C.SEFLG_MOSEPH | C.SEFLG_SPEED;
 
-  // Ascendant — use Placidus to get the ASC point; sign is what matters for Whole Sign houses
+  // Ascendant + Placidus house cusps (sidereal)
   const houses = sweph.houses_ex2(jd, C.SEFLG_SIDEREAL, lat, lon, "P");
   const ascLon = houses?.data?.points?.[0];
   if (typeof ascLon !== "number") return null;
   const ascSign = Math.floor(((ascLon % 360) + 360) % 360 / 30) + 1;
   const ascDegInSign = ascLon - (ascSign - 1) * 30;
+
+  // Extract 12 Placidus cusp longitudes for Bhava Chalit
+  const rawCusps: number[] = houses?.data?.cusps ?? [];
+  // houses_ex2 returns cusps[0] unused (1-indexed), cusps[1..12] = the 12 house cusps
+  const bhavaCusps: number[] = rawCusps.length > 12
+    ? rawCusps.slice(1, 13).map(c => ((c % 360) + 360) % 360)
+    : [];
 
   const planets: PlanetPosition[] = [];
   for (const { name, id } of PLANET_IDS) {
@@ -173,6 +203,7 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
     const nak = nakshatraFromLongitude(lonDeg);
     const nakObj = NAKSHATRAS[nak.index];
     const house = ((sign - ascSign + 12) % 12) + 1;
+    const bh = bhavaCusps.length === 12 ? bhavaHouseFromCusps(lonDeg, bhavaCusps) : undefined;
     planets.push({
       name,
       sign,
@@ -185,6 +216,7 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
       nakshatraPada: nak.pada,
       nakshatraLord: nakObj.lord,
       retrograde: name !== "Rahu" && speed < 0,
+      ...(bh !== undefined && { bhavaHouse: bh }),
     });
   }
 
@@ -197,6 +229,7 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
     const nak = nakshatraFromLongitude(ketuLon);
     const nakObj = NAKSHATRAS[nak.index];
     const house = ((sign - ascSign + 12) % 12) + 1;
+    const ketuBh = bhavaCusps.length === 12 ? bhavaHouseFromCusps(ketuLon, bhavaCusps) : undefined;
     planets.push({
       name: "Ketu",
       sign,
@@ -209,6 +242,7 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
       nakshatraPada: nak.pada,
       nakshatraLord: nakObj.lord,
       retrograde: true, // nodes are always retrograde in Vedic convention
+      ...(ketuBh !== undefined && { bhavaHouse: ketuBh }),
     });
     // Rahu is also considered retrograde
     rahu.retrograde = true;
@@ -224,5 +258,6 @@ export async function computePositionsSweph(input: RawChartInput): Promise<RawPo
     latitude: lat,
     longitude: lon,
     timezone: tzHours,
+    ...(bhavaCusps.length === 12 && { bhavaCusps }),
   };
 }

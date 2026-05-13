@@ -1,3 +1,5 @@
+import type { AyanamshaKey } from "./types";
+
 export const SIGNS = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
@@ -174,3 +176,14 @@ export const KENDRA = [1, 4, 7, 10];
 export const TRIKONA = [1, 5, 9];
 export const DUSTHANA = [6, 8, 12];
 export const UPACHAYA = [3, 6, 10, 11];
+
+// Supported Ayanamsha systems → Swiss Ephemeris constant + display label + fallback API name
+export const AYANAMSHA_MAP: Record<AyanamshaKey, { swephId: number; label: string; apiName: string }> = {
+  lahiri:         { swephId: 1,  label: "Lahiri (Chitrapaksha)",  apiName: "lahiri" },
+  raman:          { swephId: 3,  label: "B.V. Raman",            apiName: "raman" },
+  krishnamurti:   { swephId: 5,  label: "KP (Krishnamurti)",     apiName: "krishnamurti" },
+  yukteshwar:     { swephId: 7,  label: "Sri Yukteshwar",        apiName: "yukteshwar" },
+  fagan_bradley:  { swephId: 0,  label: "Fagan-Bradley",         apiName: "fagan" },
+  true_citra:     { swephId: 27, label: "True Chitra (Spica)",   apiName: "lahiri" },
+  true_revati:    { swephId: 28, label: "True Revati (ζ Piscium)", apiName: "lahiri" },
+};

@@ -1,5 +1,16 @@
 import type { PlanetName } from "./constants";
 
+export type AyanamshaKey =
+  | "lahiri"
+  | "raman"
+  | "krishnamurti"
+  | "yukteshwar"
+  | "fagan_bradley"
+  | "true_citra"
+  | "true_revati";
+
+export type HouseSystem = "whole_sign" | "placidus";
+
 export interface PlanetPosition {
   name: PlanetName;
   sign: number;          // 1..12
@@ -12,6 +23,7 @@ export interface PlanetPosition {
   nakshatraPada: 1 | 2 | 3 | 4;
   nakshatraLord: PlanetName;
   retrograde: boolean;
+  bhavaHouse?: number;   // 1..12  Placidus (Bhava Chalit) house — only set when cusps are available
 }
 
 export interface RawChartInput {
@@ -21,6 +33,8 @@ export interface RawChartInput {
   latitude?: number;
   longitude?: number;
   timezone?: number;      // hours offset, e.g. 5.5
+  ayanamsha?: AyanamshaKey;   // default: "lahiri"
+  houseSystem?: HouseSystem;  // default: "whole_sign"
 }
 
 export interface DashaPeriod {
@@ -80,11 +94,14 @@ export interface NatalChart {
   version: number;
   computedAt: string;
   input: RawChartInput;
+  ayanamsha: AyanamshaKey;
+  houseSystem: HouseSystem;
   ascendant: { sign: number; signName: string; degreeInSign: number };
   moonSign: number;
   sunSign: number;
   planets: PlanetPosition[];
   houseLords: Record<number, PlanetName>;
+  bhavaCusps?: number[];  // 12 sidereal longitudes (Placidus cusp boundaries)
   dashas: DashaTimeline;
   yogas: YogaResult[];
   doshas: DoshaResult[];

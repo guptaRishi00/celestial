@@ -1,4 +1,4 @@
-import { NAKSHATRAS, SIGNS, type PlanetName } from "./constants";
+import { AYANAMSHA_MAP, NAKSHATRAS, SIGNS, type PlanetName } from "./constants";
 import type { PlanetPosition, RawChartInput } from "./types";
 
 const PLANET_KEYS: PlanetName[] = [
@@ -116,6 +116,7 @@ export interface RawPositions {
   latitude: number;
   longitude: number;
   timezone: number;
+  bhavaCusps?: number[];  // 12 sidereal Placidus cusp longitudes (only from sweph)
 }
 
 export async function fetchRawPositions(input: RawChartInput): Promise<RawPositions | null> {
@@ -148,7 +149,10 @@ export async function fetchRawPositions(input: RawChartInput): Promise<RawPositi
       body: JSON.stringify({
         year, month, date, hours, minutes, seconds: 0,
         latitude: lat, longitude: lon, timezone: tz,
-        settings: { observation_point: "topocentric", ayanamsha: "lahiri" },
+        settings: {
+          observation_point: "topocentric",
+          ayanamsha: AYANAMSHA_MAP[input.ayanamsha ?? "lahiri"]?.apiName ?? "lahiri",
+        },
       }),
     });
     if (!res.ok) return null;

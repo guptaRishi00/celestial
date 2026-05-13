@@ -1,4 +1,5 @@
 import {
+  AYANAMSHA_MAP,
   HOUSE_MEANINGS,
   NAKSHATRAS,
   SIGNS,
@@ -14,16 +15,21 @@ import { fetchRawPositions, type RawPositions } from "./positions";
 import { computePositionsSweph } from "./positions-sweph";
 import { detectYogas } from "./yogas";
 import type {
+  AyanamshaKey,
   ChartDigest,
+  HouseSystem,
   NatalChart,
   PlanetPosition,
   RawChartInput,
   TransitInfo,
 } from "./types";
 
-const CHART_VERSION = 1;
+const CHART_VERSION = 2;
 
 export async function computeNatalChart(input: RawChartInput): Promise<NatalChart | null> {
+  const ayanamsha: AyanamshaKey = input.ayanamsha ?? "lahiri";
+  const houseSystem: HouseSystem = input.houseSystem ?? "whole_sign";
+
   // Try Swiss Ephemeris first (offline, no rate limits, sub-arcsecond accuracy).
   // Fall back to FreeAstrologyAPI if sweph fails for any reason (e.g., native module load issue in some envs).
   let raw: RawPositions | null = null;
@@ -69,6 +75,8 @@ export async function computeNatalChart(input: RawChartInput): Promise<NatalChar
       longitude: raw.longitude,
       timezone: raw.timezone,
     },
+    ayanamsha,
+    houseSystem,
     ascendant: {
       sign: ascSign,
       signName: SIGNS[ascSign - 1],
@@ -78,6 +86,7 @@ export async function computeNatalChart(input: RawChartInput): Promise<NatalChar
     sunSign: sun.sign,
     planets,
     houseLords,
+    ...(raw.bhavaCusps && { bhavaCusps: raw.bhavaCusps }),
     dashas,
     yogas,
     doshas,
@@ -90,15 +99,20 @@ export function buildChartDigest(chart: NatalChart, transits?: TransitInfo | nul
   const ascName = chart.ascendant.signName;
   const moonNak = NAKSHATRAS[chart.planets.find(p => p.name === "Moon")!.nakshatraIndex];
   const sunNak = NAKSHATRAS[chart.planets.find(p => p.name === "Sun")!.nakshatraIndex];
+  const ayanLabel = AYANAMSHA_MAP[chart.ayanamsha]?.label ?? chart.ayanamsha;
 
   const identity =
     `${ascName} lagna (ascendant at ${chart.ascendant.degreeInSign.toFixed(1)}°). ` +
     `Moon in ${SIGNS[chart.moonSign - 1]} (Chandra Rashi), nakshatra ${moonNak.name}. ` +
-    `Sun in ${SIGNS[chart.sunSign - 1]} (Surya Rashi), nakshatra ${sunNak.name}.`;
+    `Sun in ${SIGNS[chart.sunSign - 1]} (Surya Rashi), nakshatra ${sunNak.name}. ` +
+    `Ayanamsha: ${ayanLabel}.`;
 
   const planets = chart.planets.map(p => {
     const retro = p.retrograde ? " [R]" : "";
-    return `${p.name} in ${p.signName} (House ${p.house}, ${p.degreeInSign.toFixed(1)}°) — ${NAKSHATRAS[p.nakshatraIndex].name} nakshatra, Pada ${p.nakshatraPada}, ruled by ${NAKSHATRAS[p.nakshatraIndex].lord}${retro}`;
+    const bhava = p.bhavaHouse != null && p.bhavaHouse !== p.house
+      ? `, Bhava Chalit House ${p.bhavaHouse}`
+      : "";
+    return `${p.name} in ${p.signName} (House ${p.house}${bhava}, ${p.degreeInSign.toFixed(1)}°) — ${NAKSHATRAS[p.nakshatraIndex].name} nakshatra, Pada ${p.nakshatraPada}, ruled by ${NAKSHATRAS[p.nakshatraIndex].lord}${retro}`;
   });
 
   const planetsByHouse: Record<number, string[]> = {};
@@ -122,9 +136,9 @@ export function buildChartDigest(chart: NatalChart, transits?: TransitInfo | nul
   const a = chart.dashas.current.antar;
   const pr = chart.dashas.current.pratyantar;
   const currentDasha =
-    `Mahadasha: ${m.lord} (until ${m.endDate.slice(0,10)}). ` +
-    `Antardasha: ${a.lord} (until ${a.endDate.slice(0,10)})` +
-    (pr ? `. Pratyantar: ${pr.lord} (until ${pr.endDate.slice(0,10)})` : "");
+    `Mahadasha: ${m.lord} (until ${m.endDate.slice(0, 10)}). ` +
+    `Antardasha: ${a.lord} (until ${a.endDate.slice(0, 10)})` +
+    (pr ? `. Pratyantar: ${pr.lord} (until ${pr.endDate.slice(0, 10)})` : "");
 
   const notableTransits: string[] = [];
   if (transits?.notable.sadeSati) {
@@ -156,6 +170,10 @@ export function relevantChartFor(chart: NatalChart, topic: string, transits?: Tr
     const aspectingPlanets = chart.aspects
       .filter(a => a.toHouse === h)
       .map(a => a.from);
+    // Note planets whose Bhava Chalit house differs from Whole Sign house
+    const bhavaShifts = chart.planets
+      .filter(p => p.bhavaHouse != null && p.house !== h && p.bhavaHouse === h)
+      .map(p => p.name);
     return {
       house: h,
       meaning: HOUSE_MEANINGS[h],
@@ -163,6 +181,7 @@ export function relevantChartFor(chart: NatalChart, topic: string, transits?: Tr
       lordPosition: lordPos ? `${lord} in House ${lordPos.house} (${lordPos.signName})` : null,
       occupants: occupants.map(o => `${o.name} (${o.signName})`),
       aspectingPlanets: Array.from(new Set(aspectingPlanets)),
+      bhavaShiftsIn: bhavaShifts,
     };
   });
 
