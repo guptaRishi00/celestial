@@ -51,18 +51,18 @@ export default function HeroSection() {
 
           {/* Buttons */}
           <div className="flex flex-wrap gap-4 mt-1">
-            <button
-              type="button"
+            <a
+              href="/chat"
               className="rounded-full bg-hero-accent px-7 py-3 text-sm font-bold tracking-wide text-inverse-surface font-kobe transition-all duration-300 hover:scale-105 hover:shadow-[0_0_28px_rgba(196,161,255,0.45)] active:scale-95 cursor-pointer"
             >
               Get Your Reading
-            </button>
-            <button
-              type="button"
+            </a>
+            <a
+              href="#zodiac-section"
               className="rounded-full border border-white/25 bg-white/5 backdrop-blur-sm px-7 py-3 text-sm font-bold tracking-wide text-white font-kobe transition-all duration-300 hover:bg-white/15 hover:border-white/40 active:scale-95 cursor-pointer"
             >
               Explore Signs
-            </button>
+            </a>
           </div>
 
           {/* Social proof */}
