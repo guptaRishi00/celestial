@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# wasm files copied by postinstall (regenerated from node_modules)
+public/swisseph.wasm
+public/swisseph.data
