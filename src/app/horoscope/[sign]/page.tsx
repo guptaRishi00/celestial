@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getDetailedHoroscope } from "@/lib/horoscope";
@@ -30,20 +31,103 @@ const tattvaColors: Record<string, string> = {
   Jala: "text-blue-400",
 };
 
+// Skeleton for the reading content
+function ReadingLoading() {
+  return (
+    <div className="flex flex-col gap-12 animate-pulse">
+      <div className="flex flex-col gap-4 bg-white/[0.02] border border-white/5 p-8 rounded-2xl">
+        <div className="h-6 w-40 bg-white/5 rounded" />
+        <div className="flex flex-col gap-2">
+          <div className="h-4 w-full bg-white/5 rounded" />
+          <div className="h-4 w-3/4 bg-white/5 rounded" />
+          <div className="h-4 w-5/6 bg-white/5 rounded" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {[1, 2, 3].map(i => (
+          <div key={i} className={`flex flex-col gap-3 bg-white/[0.02] border border-white/5 p-8 rounded-2xl ${i === 3 ? 'md:col-span-2' : ''}`}>
+            <div className="h-5 w-32 bg-white/5 rounded" />
+            <div className="flex flex-col gap-1.5">
+              <div className="h-3 w-full bg-white/5 rounded" />
+              <div className="h-3 w-2/3 bg-white/5 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Async component that fetches the data
+async function DetailedReading({ sign }: { sign: string }) {
+  const detailedData = await getDetailedHoroscope(sign);
+
+  if (!detailedData) {
+    return (
+      <p className="text-white/50 font-kobe text-center">
+        Reading is currently unavailable. Please try again later.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm">
+        <h2 className="font-voyage text-2xl text-hero-accent tracking-wide">Today&apos;s Overview</h2>
+        <p className="font-kobe text-white/70 leading-relaxed">
+          {detailedData.general}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-3 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm hover:border-white/10 transition-colors">
+          <h3 className="font-voyage text-xl text-white tracking-wide">Career &amp; Finance</h3>
+          <p className="font-kobe text-sm text-white/60 leading-relaxed">
+            {detailedData.career}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm hover:border-white/10 transition-colors">
+          <h3 className="font-voyage text-xl text-white tracking-wide">Love &amp; Relationships</h3>
+          <p className="font-kobe text-sm text-white/60 leading-relaxed">
+            {detailedData.love}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 md:col-span-2 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm hover:border-white/10 transition-colors">
+          <h3 className="font-voyage text-xl text-white tracking-wide">Health &amp; Wellness</h3>
+          <p className="font-kobe text-sm text-white/60 leading-relaxed">
+            {detailedData.health}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-4 mt-4">
+        <div className="flex-1 min-w-[200px] flex items-center justify-between bg-white/[0.02] border border-white/5 p-6 rounded-2xl hover:bg-white/[0.04] transition-colors">
+          <span className="font-voyage text-lg text-white/50">Lucky Color</span>
+          <span className="font-kobe text-hero-accent font-medium uppercase tracking-widest">{detailedData.luckyColor}</span>
+        </div>
+        <div className="flex-1 min-w-[200px] flex items-center justify-between bg-white/[0.02] border border-white/5 p-6 rounded-2xl hover:bg-white/[0.04] transition-colors">
+          <span className="font-voyage text-lg text-white/50">Lucky Number</span>
+          <span className="font-kobe text-hero-accent font-medium text-xl">{detailedData.luckyNumber}</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default async function DetailedHoroscopePage({ params }: { params: Promise<{ sign: string }> }) {
   const resolvedParams = await params;
   const signInfo = getSignInfo(resolvedParams.sign);
-  
+
   if (!signInfo) {
     return <div className="text-white text-center py-20 font-kobe">Sign not found</div>;
   }
 
-  const detailedData = await getDetailedHoroscope(resolvedParams.sign);
-
   return (
     <main className="w-full bg-black min-h-screen flex flex-col">
       <Header />
-      
+
       <section className="relative w-full flex-grow py-24 sm:py-32">
         {/* Background */}
         <Image
@@ -72,13 +156,13 @@ export default async function DetailedHoroscopePage({ params }: { params: Promis
                 className="object-contain drop-shadow-[0_0_30px_rgba(196,161,255,0.2)]"
               />
             </div>
-            
+
             <div className="flex flex-col text-center sm:text-left gap-3">
               <span className={`inline-flex items-center gap-1.5 w-fit mx-auto sm:mx-0 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-kobe tracking-[0.15em] uppercase ${tattvaColors[signInfo.tattva]}`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
                 {signInfo.tattva} Tattva
               </span>
-              
+
               <h1 className="font-voyage font-bold text-5xl sm:text-6xl text-white tracking-wide">
                 {signInfo.vedic}
               </h1>
@@ -86,65 +170,22 @@ export default async function DetailedHoroscopePage({ params }: { params: Promis
               <p className="font-kobe text-lg text-white/60">
                 {signInfo.name} Rashi
               </p>
-              
+
               <p className="font-kobe text-sm text-white/40 tracking-widest uppercase">
                 {signInfo.date}
               </p>
             </div>
           </div>
 
-          {/* Detailed Content */}
+          {/* Detailed Content — streams in */}
           <div className="flex flex-col gap-12">
-            {!detailedData ? (
-              <p className="text-white/50 font-kobe text-center">Reading is currently unavailable. Please try again later.</p>
-            ) : (
-              <>
-                <div className="flex flex-col gap-4 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm">
-                  <h2 className="font-voyage text-2xl text-hero-accent tracking-wide">Today's Overview</h2>
-                  <p className="font-kobe text-white/70 leading-relaxed">
-                    {detailedData.general}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-3 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm hover:border-white/10 transition-colors">
-                    <h3 className="font-voyage text-xl text-white tracking-wide">Career & Finance</h3>
-                    <p className="font-kobe text-sm text-white/60 leading-relaxed">
-                      {detailedData.career}
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-col gap-3 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm hover:border-white/10 transition-colors">
-                    <h3 className="font-voyage text-xl text-white tracking-wide">Love & Relationships</h3>
-                    <p className="font-kobe text-sm text-white/60 leading-relaxed">
-                      {detailedData.love}
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-col gap-3 md:col-span-2 bg-white/[0.02] border border-white/5 p-8 rounded-2xl backdrop-blur-sm hover:border-white/10 transition-colors">
-                    <h3 className="font-voyage text-xl text-white tracking-wide">Health & Wellness</h3>
-                    <p className="font-kobe text-sm text-white/60 leading-relaxed">
-                      {detailedData.health}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-4 mt-4">
-                  <div className="flex-1 min-w-[200px] flex items-center justify-between bg-white/[0.02] border border-white/5 p-6 rounded-2xl hover:bg-white/[0.04] transition-colors">
-                    <span className="font-voyage text-lg text-white/50">Lucky Color</span>
-                    <span className="font-kobe text-hero-accent font-medium uppercase tracking-widest">{detailedData.luckyColor}</span>
-                  </div>
-                  <div className="flex-1 min-w-[200px] flex items-center justify-between bg-white/[0.02] border border-white/5 p-6 rounded-2xl hover:bg-white/[0.04] transition-colors">
-                    <span className="font-voyage text-lg text-white/50">Lucky Number</span>
-                    <span className="font-kobe text-hero-accent font-medium text-xl">{detailedData.luckyNumber}</span>
-                  </div>
-                </div>
-              </>
-            )}
+            <Suspense fallback={<ReadingLoading />}>
+              <DetailedReading sign={resolvedParams.sign} />
+            </Suspense>
           </div>
         </div>
       </section>
-      
+
       <Footer />
     </main>
   );
