@@ -106,26 +106,38 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="sm:hidden flex flex-col justify-center items-center gap-1.5 w-9 h-9 rounded-lg bg-white/5 border border-white/10 cursor-pointer transition-all duration-200 hover:bg-white/10"
-          aria-label="Toggle menu"
-        >
-          <span
-            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "rotate-45 translate-y-[5px]" : ""
-              }`}
-          />
-          <span
-            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 ${open ? "opacity-0 scale-x-0" : ""
-              }`}
-          />
-          <span
-            className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "-rotate-45 -translate-y-[5px]" : ""
-              }`}
-          />
-        </button>
+        {/* Mobile actions */}
+        <div className="flex sm:hidden items-center gap-2">
+          {/* Mobile Language Toggle */}
+          <button
+            type="button"
+            onClick={() => setLang(lang === "en" ? "hi" : "en")}
+            className="flex items-center justify-center min-w-[40px] px-2 h-9 rounded-lg bg-white/5 border border-white/10 text-xs font-kobe font-bold text-white/80 tracking-wide transition-all duration-200 hover:bg-white/10 hover:text-white"
+          >
+            {lang === "en" ? "हिं" : "EN"}
+          </button>
+
+          {/* Mobile hamburger */}
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            className="flex flex-col justify-center items-center gap-1.5 w-9 h-9 rounded-lg bg-white/5 border border-white/10 cursor-pointer transition-all duration-200 hover:bg-white/10"
+            aria-label="Toggle menu"
+          >
+            <span
+              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "rotate-45 translate-y-[5px]" : ""
+                }`}
+            />
+            <span
+              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 ${open ? "opacity-0 scale-x-0" : ""
+                }`}
+            />
+            <span
+              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "-rotate-45 -translate-y-[5px]" : ""
+                }`}
+            />
+          </button>
+        </div>
       </nav>
 
       {/* Mobile dropdown */}
@@ -188,19 +200,6 @@ export default function Header() {
               </a>
             </>
           )}
-          
-          {/* Mobile Language Toggle */}
-          <div className="h-px bg-white/10 my-1" />
-          <button
-            type="button"
-            onClick={() => {
-              setLang(lang === "en" ? "hi" : "en");
-              setOpen(false);
-            }}
-            className="flex items-center justify-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-bold text-white/80 font-kobe tracking-wide transition-all duration-200 hover:bg-white/10 hover:text-white"
-          >
-            {lang === "en" ? "हिंदी में बदलें" : "Switch to English"}
-          </button>
         </div>
       </div>
     </header>

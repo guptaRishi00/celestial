@@ -3,6 +3,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const World = dynamic(
   () => import("../../../components/ui/globe").then((m) => m.World),
@@ -12,6 +13,7 @@ const World = dynamic(
 );
 
 export function GlobeDemo() {
+  const { t } = useLanguage();
   const globeConfig = {
     pointSize: 4,
     globeColor: "#0a0a12",
@@ -432,20 +434,19 @@ export function GlobeDemo() {
         >
           {/* Badge */}
           <span className="inline-flex items-center gap-2 w-fit rounded-full border border-white/10 bg-white/5 backdrop-blur-md px-4 py-1.5 text-xs tracking-[0.2em] uppercase text-hero-accent font-kobe">
-            ✦ Global Reach
+            {t("globe.badge")}
           </span>
 
           {/* Title */}
           <h2 className="font-voyage font-bold text-4xl sm:text-5xl lg:text-6xl leading-[1.12] tracking-tight text-white max-w-2xl">
-            Celestial Guidance,
+            {t("globe.titleLine1")}
             <br className="hidden sm:block" />
-            Across the World
+            {t("globe.titleLine2")}
           </h2>
 
           {/* Description */}
           <p className="font-kobe text-base sm:text-lg leading-relaxed text-white/50 max-w-lg">
-            Our cosmic insights reach seekers in every corner of the globe,
-            connecting souls to the stars no matter where they are.
+            {t("globe.description")}
           </p>
         </motion.div>
 

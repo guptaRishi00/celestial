@@ -41,6 +41,15 @@ const translations = {
     hi: "तारों में बुने भाग्य के छुपे धागों को जानें। प्राचीन कार्ड आपके जीवन की यात्रा को आकार देने वाले ब्रह्मांडीय पैटर्न प्रकट करें।",
   },
 
+  // ─── Globe Section ───────────────────────────────────────
+  "globe.badge": { en: "✦ Global Reach", hi: "✦ वैश्विक पहुँच" },
+  "globe.titleLine1": { en: "Celestial Guidance,", hi: "दुनिया भर में," },
+  "globe.titleLine2": { en: "Across the World", hi: "दिव्य मार्गदर्शन" },
+  "globe.description": {
+    en: "Our cosmic insights reach seekers in every corner of the globe, connecting souls to the stars no matter where they are.",
+    hi: "हमारी ब्रह्मांडीय अंतर्दृष्टि दुनिया के हर कोने में साधकों तक पहुंचती है, आत्माओं को सितारों से जोड़ती है चाहे वे कहीं भी हों।",
+  },
+
   // ─── Footer ──────────────────────────────────────────────
   "footer.stayConnected": { en: "✦ Stay Connected", hi: "✦ जुड़े रहें" },
   "footer.newsletterTitle1": { en: "Receive Your Daily", hi: "अपना दैनिक" },
