@@ -142,18 +142,15 @@ export async function POST(request: Request) {
       }
     };
 
-    // Pipeline: intent → reasoning → persona stream
-    // Stage A — intent (cheap; never blocks long)
-    const intent = await classifyIntent(lastUserMessage, messages.slice(0, -1));
+    // Pipeline: intent & transits in parallel, skip reasoning to reduce TTFB
+    const [intent, transits] = await Promise.all([
+      classifyIntent(lastUserMessage, messages.slice(0, -1)),
+      chart ? getEnrichedTransits(chart) : Promise.resolve(null)
+    ]);
 
-    // For meta-questions, skip reasoning; let persona deflect
-    let transits: TransitInfo | null = null;
+    // We skip runReasoningPass to reduce Time-To-First-Byte.
+    // The Persona model is capable of reasoning directly from the chart digest.
     let reasoning = null;
-    if (chart && !intent.isMetaQuestion) {
-      transits = await getEnrichedTransits(chart);
-      // Stage B — structured reasoning (fire while persona prompt is being assembled)
-      reasoning = await runReasoningPass(lastUserMessage, intent, chart, transits);
-    }
 
     // Stage C — persona stream
     const stream = await streamPersonaResponse({

@@ -15,6 +15,7 @@ import { detectDoshas } from "./doshas";
 import { fetchRawPositions, type RawPositions } from "./positions";
 import { computePositionsSweph } from "./positions-sweph";
 import { detectYogas } from "./yogas";
+import { computePanchangAndAvakahada } from "./panchang";
 import type {
   AyanamshaKey,
   ChartDigest,
@@ -60,6 +61,15 @@ export async function computeNatalChart(input: RawChartInput): Promise<NatalChar
   const doshas = detectDoshas(planets, ascSign);
   const aspects = computeAspects(planets);
 
+  // Compute Panchang and Avakahada
+  const dateObj = new Date(`${input.dob}T${input.birthTime}Z`); // approximation for Vara calculation
+  const { panchang, avakahada } = computePanchangAndAvakahada(
+    sun.longitude,
+    moon.longitude,
+    raw.ascendantLongitude,
+    dateObj
+  );
+
   // House lords map (1..12 → planet that rules the sign occupying that house)
   const houseLords: Record<number, PlanetName> = {};
   for (let h = 1; h <= 12; h++) {
@@ -92,6 +102,8 @@ export async function computeNatalChart(input: RawChartInput): Promise<NatalChar
     yogas,
     doshas,
     aspects,
+    panchang,
+    avakahada,
   };
 }
 

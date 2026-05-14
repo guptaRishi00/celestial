@@ -11,6 +11,28 @@ export type AyanamshaKey =
 
 export type HouseSystem = "whole_sign" | "placidus";
 
+export interface Panchang {
+  tithi: { index: number; name: string; leftPercent: number };
+  vara: { index: number; name: string };
+  nakshatra: { index: number; name: string; leftPercent: number };
+  yoga: { index: number; name: string; leftPercent: number };
+  karana: { index: number; name: string; leftPercent: number };
+}
+
+export interface AvakahadaChakra {
+  varna: string;
+  vashya: string;
+  tara: string;
+  yoni: string;
+  grahaMaitri: string;
+  gana: string;
+  bhakoot: string;
+  nadi: string;
+  nadiPada: string;
+  nameAlphabet: string;
+  paya: string;
+}
+
 export interface PlanetPosition {
   name: PlanetName;
   sign: number;          // 1..12
@@ -106,6 +128,8 @@ export interface NatalChart {
   yogas: YogaResult[];
   doshas: DoshaResult[];
   aspects: AspectInfo[];
+  panchang?: Panchang;
+  avakahada?: AvakahadaChakra;
 }
 
 export interface ChartDigest {

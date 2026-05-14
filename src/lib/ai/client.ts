@@ -17,10 +17,9 @@ export function getOpenRouterClient(): OpenAI | null {
   return _client;
 }
 
-// Model identifiers (OpenRouter slugs)
 export const MODELS = {
-  INTENT: "deepseek/deepseek-chat",       // ultra cheap, fast classifier
-  REASONING: "deepseek/deepseek-chat",    // structured JSON output
-  PERSONA: "moonshotai/kimi-k2",          // long-form Hinglish persona
-  PERSONA_FALLBACK: "deepseek/deepseek-chat",
+  INTENT: "google/gemini-2.5-flash",
+  REASONING: "google/gemini-2.5-flash",
+  PERSONA: "google/gemini-2.5-flash",
+  PERSONA_FALLBACK: "google/gemini-2.5-flash",
 } as const;

@@ -254,7 +254,7 @@ export default function ChatInterface() {
     setIsGeneratingReport(true);
     setReportToast(null);
     try {
-      const res = await fetch("/api/report");
+      const res = await fetch(`/api/report?lang=${lang}`);
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         const msg = data?.error || t("chat.reportFailed");

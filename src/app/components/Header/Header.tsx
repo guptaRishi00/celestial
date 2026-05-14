@@ -14,7 +14,7 @@ export default function Header() {
     setIsGeneratingReport(true);
     setReportToast(null);
     try {
-      const res = await fetch("/api/report");
+      const res = await fetch(`/api/report?lang=${lang}`);
       if (!res.ok) {
         if (res.status === 401) {
           window.location.href = "/login";
