@@ -14,7 +14,9 @@ export default function ChatPage() {
     <main className="relative w-full min-h-screen overflow-hidden bg-black">
 
       {/* ── Content ── */}
-      <div className="relative z-10 flex flex-col h-screen">
+      {/* h-[100dvh] (dynamic viewport height) handles mobile Safari/Chrome's
+          collapsing URL bar correctly. Falls back to h-screen on older browsers. */}
+      <div className="relative z-10 flex flex-col h-screen h-[100dvh]">
         {/* Header bar */}
         <ChatHeader />
 

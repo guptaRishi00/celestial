@@ -25,6 +25,19 @@ Font.register({
   src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/hind/Hind-Regular.ttf',
 });
 
+// Devanagari script support — required for the cover-page "ॐ" glyph and any
+// Hindi content rendered in the PDF. Without this Font.register the renderer
+// throws "Font family not registered" and the whole report build fails.
+Font.register({
+  family: 'Noto Sans Devanagari',
+  fonts: [
+    {
+      src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/notosansdevanagari/NotoSansDevanagari%5Bwdth%2Cwght%5D.ttf',
+      fontWeight: 'normal',
+    },
+  ],
+});
+
 const THEME = {
   primary: '#4A1E1E',
   accent: '#C8A96B',
