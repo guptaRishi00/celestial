@@ -1,13 +1,18 @@
+"use client";
+
 import Image from "next/image";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const footerLinks = {
   Support: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
+    { labelKey: "footer.privacyPolicy", href: "#" },
+    { labelKey: "footer.termsOfService", href: "#" },
   ],
 };
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer id="site-footer" className="relative w-full overflow-hidden">
       {/* ── Background ── */}
@@ -33,29 +38,29 @@ export default function Footer() {
             <div className="relative flex flex-col lg:flex-row items-center justify-between gap-8">
               <div className="flex flex-col gap-3 text-center lg:text-left">
                 <span className="inline-flex items-center gap-2 w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] tracking-[0.2em] uppercase text-hero-accent font-kobe mx-auto lg:mx-0">
-                  ✦ Stay Connected
+                  {t("footer.stayConnected")}
                 </span>
                 <h3 className="font-voyage font-bold text-2xl sm:text-3xl text-white">
-                  Receive Your Daily
+                  {t("footer.newsletterTitle1")}
                   <br className="hidden sm:block" />
-                  Cosmic Insights
+                  {t("footer.newsletterTitle2")}
                 </h3>
                 <p className="font-kobe text-sm text-white/40 max-w-md">
-                  Join thousands of seekers who start their day with celestial guidance delivered straight to their inbox.
+                  {t("footer.newsletterDesc")}
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("footer.emailPlaceholder")}
                   className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm px-5 py-3.5 text-sm text-white/80 font-kobe placeholder:text-white/25 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.07] w-full sm:w-72"
                 />
                 <button
                   type="button"
                   className="rounded-xl bg-hero-accent px-6 py-3.5 text-sm font-bold text-inverse-surface font-kobe tracking-wide transition-all duration-300 hover:scale-105 hover:shadow-[0_0_24px_rgba(196,161,255,0.4)] active:scale-95 cursor-pointer whitespace-nowrap"
                 >
-                  Subscribe ✦
+                  {t("footer.subscribe")}
                 </button>
               </div>
             </div>
@@ -79,30 +84,33 @@ export default function Footer() {
                 </span>
               </a>
               <p className="font-kobe text-sm leading-relaxed text-white/40 max-w-xs">
-                Bridging ancient celestial wisdom with modern insight to illuminate your path through the cosmos.
+                {t("footer.brandDesc")}
               </p>
             </div>
 
             {/* Link Columns */}
-            {Object.entries(footerLinks).map(([title, links]) => (
-              <div key={title} className="flex flex-col gap-4">
-                <h4 className="font-voyage text-sm font-bold text-white tracking-wide">
-                  {title}
-                </h4>
-                <ul className="flex flex-col gap-2.5">
-                  {links.map((link) => (
-                    <li key={link.label}>
-                      <a
-                        href={link.href}
-                        className="font-kobe text-sm text-white/35 transition-all duration-300 hover:text-hero-accent"
-                      >
-                        {link.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            {Object.entries(footerLinks).map(([title, links]) => {
+              const titleKey = `footer.${title.toLowerCase()}` as any;
+              return (
+                <div key={title} className="flex flex-col gap-4">
+                  <h4 className="font-voyage text-sm font-bold text-white tracking-wide">
+                    {t(titleKey)}
+                  </h4>
+                  <ul className="flex flex-col gap-2.5">
+                    {links.map((link) => (
+                      <li key={link.labelKey}>
+                        <a
+                          href={link.href}
+                          className="font-kobe text-sm text-white/35 transition-all duration-300 hover:text-hero-accent"
+                        >
+                          {t(link.labelKey as any)}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -115,7 +123,7 @@ export default function Footer() {
         <div className="mx-auto w-full  px-6 sm:px-10 lg:px-16 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="font-kobe text-xs text-white/25 tracking-wide">
-              © {new Date().getFullYear()} Celestial Editorial. All rights reserved.
+              © {new Date().getFullYear()} {t("footer.copyright")}
             </p>
           </div>
         </div>

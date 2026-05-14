@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface User {
   id: string;
@@ -27,6 +28,8 @@ export default function ProfileContent() {
   const [editBirthTime, setEditBirthTime] = useState("");
   const [editBirthPlace, setEditBirthPlace] = useState("");
   const [editGender, setEditGender] = useState("");
+
+  const { t, lang } = useLanguage();
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -68,11 +71,11 @@ export default function ProfileContent() {
       if (data.success && data.user) {
         setUser((prev) => (prev ? { ...prev, ...data.user } : prev));
         setEditing(false);
-        setSaveMessage("Profile updated successfully! ✦");
+        setSaveMessage(t("profile.updated"));
         setTimeout(() => setSaveMessage(""), 3000);
       }
     } catch {
-      setSaveMessage("Failed to save. Try again.");
+      setSaveMessage(t("profile.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -94,7 +97,7 @@ export default function ProfileContent() {
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 rounded-full border-2 border-hero-accent/30 border-t-hero-accent animate-spin" />
           <span className="text-sm text-white/30 font-kobe tracking-wide">
-            Loading your cosmic profile...
+            {t("profile.loading")}
           </span>
         </div>
       </div>
@@ -111,7 +114,7 @@ export default function ProfileContent() {
     .slice(0, 2);
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "Not set";
+    if (!dateStr) return t("profile.notSet");
     try {
       return new Date(dateStr).toLocaleDateString("en-IN", {
         day: "numeric",
@@ -124,7 +127,7 @@ export default function ProfileContent() {
   };
 
   const formatTime = (timeStr: string | null) => {
-    if (!timeStr) return "Not set";
+    if (!timeStr) return t("profile.notSet");
     try {
       const [h, m] = timeStr.split(":");
       const hour = parseInt(h, 10);
@@ -174,7 +177,7 @@ export default function ProfileContent() {
               <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z" />
               <path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z" />
             </svg>
-            {editing ? "Cancel" : "Edit"}
+            {editing ? t("profile.cancel") : t("profile.edit")}
           </button>
         </div>
 
@@ -183,7 +186,7 @@ export default function ProfileContent() {
           <div>
             {editing ? (
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="edit-name" className="text-xs text-white/40 font-kobe tracking-wide">Name</label>
+                <label htmlFor="edit-name" className="text-xs text-white/40 font-kobe tracking-wide">{t("profile.name")}</label>
                 <input
                   id="edit-name"
                   type="text"
@@ -211,17 +214,17 @@ export default function ProfileContent() {
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-xl bg-white/[0.03] border border-white/6 p-4 flex flex-col gap-1.5">
               <span className="text-[11px] text-white/25 font-kobe tracking-wider uppercase">
-                Member Since
+                {t("profile.memberSince")}
               </span>
               <span className="text-sm text-white/70 font-kobe">
                 {user.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
-                  : "Recently"}
+                  ? new Date(user.createdAt).toLocaleDateString(lang === "hi" ? "hi-IN" : "en-IN", { month: "long", year: "numeric" })
+                  : t("profile.recently")}
               </span>
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-white/6 p-4 flex flex-col gap-1.5">
               <span className="text-[11px] text-white/25 font-kobe tracking-wider uppercase">
-                Gender
+                {t("profile.gender")}
               </span>
               {editing ? (
                 <select
@@ -236,7 +239,7 @@ export default function ProfileContent() {
                 </select>
               ) : (
                 <span className="text-sm text-white/70 font-kobe">
-                  {user.gender || "Not set"}
+                  {user.gender ? t(`login.${user.gender.toLowerCase()}` as any) : t("profile.notSet")}
                 </span>
               )}
             </div>
@@ -249,10 +252,10 @@ export default function ProfileContent() {
         <div className="px-8 py-5 border-b border-white/6 flex items-center gap-2">
           <span className="text-hero-accent">✧</span>
           <h2 className="font-voyage text-base font-bold text-white/80">
-            Birth Details
+            {t("profile.birthDetails")}
           </h2>
           <span className="ml-auto text-[11px] text-white/20 font-kobe tracking-wide">
-            For kundali readings
+            {t("profile.forKundali")}
           </span>
         </div>
 
@@ -263,7 +266,7 @@ export default function ProfileContent() {
               <span className="text-lg">📅</span>
               <div>
                 <span className="text-[11px] text-white/25 font-kobe tracking-wider uppercase block">
-                  Date of Birth
+                  {t("profile.dateOfBirth")}
                 </span>
                 {editing ? (
                   <input
@@ -287,7 +290,7 @@ export default function ProfileContent() {
               <span className="text-lg">🕐</span>
               <div>
                 <span className="text-[11px] text-white/25 font-kobe tracking-wider uppercase block">
-                  Birth Time
+                  {t("profile.birthTime")}
                 </span>
                 {editing ? (
                   <input
@@ -311,19 +314,19 @@ export default function ProfileContent() {
               <span className="text-lg">📍</span>
               <div>
                 <span className="text-[11px] text-white/25 font-kobe tracking-wider uppercase block">
-                  Birth Place
+                  {t("profile.birthPlace")}
                 </span>
                 {editing ? (
                   <input
                     type="text"
                     value={editBirthPlace}
                     onChange={(e) => setEditBirthPlace(e.target.value)}
-                    placeholder="e.g., Mumbai, Maharashtra"
+                    placeholder={t("profile.birthPlacePlaceholder")}
                     className="mt-1 bg-transparent text-sm text-white font-kobe placeholder:text-white/20 outline-none w-full"
                   />
                 ) : (
                   <span className="text-sm text-white/70 font-kobe">
-                    {user.birthPlace || "Not set"}
+                    {user.birthPlace || t("profile.notSet")}
                   </span>
                 )}
               </div>
@@ -338,13 +341,13 @@ export default function ProfileContent() {
               disabled={saving}
               className="mt-2 w-full rounded-xl bg-hero-accent px-6 py-3.5 text-sm font-bold text-inverse-surface font-kobe tracking-wide transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_24px_rgba(196,161,255,0.4)] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
             >
-              {saving ? "Saving..." : "Save Changes ✦"}
+              {saving ? t("profile.saving") : t("profile.saveChanges")}
             </button>
           )}
 
           {!editing && !user.dob && !user.birthTime && !user.birthPlace && (
             <p className="text-[11px] text-white/20 font-kobe tracking-wide text-center py-2">
-              ✦ Add your birth details for personalized kundali readings from Pandit Ji
+              {t("profile.addBirthDetails")}
             </p>
           )}
         </div>
@@ -354,7 +357,7 @@ export default function ProfileContent() {
       <div className="rounded-2xl border border-white/10 bg-[#0f0e0c]/90 backdrop-blur-2xl overflow-hidden">
         <div className="px-8 py-5 border-b border-white/6">
           <h2 className="font-voyage text-base font-bold text-white/80">
-            Quick Actions
+            {t("profile.quickActions")}
           </h2>
         </div>
 
@@ -368,10 +371,10 @@ export default function ProfileContent() {
             </div>
             <div className="flex-1">
               <span className="text-sm text-white/80 font-kobe block">
-                Chat with Pandit Ji
+                {t("profile.chatWithPanditJi")}
               </span>
               <span className="text-[11px] text-white/25 font-kobe">
-                Continue your astrology consultation
+                {t("profile.continueConsultation")}
               </span>
             </div>
             <svg
@@ -399,10 +402,10 @@ export default function ProfileContent() {
             </div>
             <div className="flex-1">
               <span className="text-sm text-white/80 font-kobe block">
-                Explore Rashis
+                {t("profile.exploreRashis")}
               </span>
               <span className="text-[11px] text-white/25 font-kobe">
-                Daily rashi phal and nakshatra insights
+                {t("profile.dailyRashiPhal")}
               </span>
             </div>
             <svg
@@ -445,7 +448,7 @@ export default function ProfileContent() {
             clipRule="evenodd"
           />
         </svg>
-        {loggingOut ? "Signing out..." : "Sign Out"}
+        {loggingOut ? t("profile.signingOut") : t("profile.signOut")}
       </button>
     </div>
   );

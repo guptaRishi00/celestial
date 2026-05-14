@@ -38,7 +38,14 @@ async function getEnrichedTransits(chart: NatalChart | null): Promise<TransitInf
   return enrichTransitsForChart(t, chart);
 }
 
-function getFallbackResponse(userName: string, hasChart: boolean): string {
+function getFallbackResponse(userName: string, hasChart: boolean, lang?: string): string {
+  if (lang === "hi") {
+    if (!hasChart) {
+      return `🙏 नमस्ते ${userName || "बेटा"}! मैं पंडित शास्त्री जी हूँ। आपकी कुंडली बनाने के लिए मुझे आपकी जन्म तिथि, समय और स्थान चाहिए। प्रोफ़ाइल में विवरण भर दीजिए तो मैं आपके ग्रहों की स्थिति देख सकता हूँ। शुभ हो! ✨`;
+    }
+    return `🙏 नमस्ते ${userName || "बेटा"}! मेरे पास आपकी कुंडली तो है, लेकिन अभी सेवा में छोटी सी रुकावट आ रही है। थोड़ी देर में फिर कोशिश कीजिए। भगवान आपका भला करे। 🙏`;
+  }
+
   if (!hasChart) {
     return `🙏 Namaste ${userName || "beta"}! Main Pandit Shastri Ji hoon. Aapki kundali banane ke liye mujhe aapka janam tithi, samay aur sthaan chahiye. Profile mein details bhar dijiye toh main aapke graho ki sthiti dekh sakta hoon. Shubh ho! ✨`;
   }
@@ -47,7 +54,7 @@ function getFallbackResponse(userName: string, hasChart: boolean): string {
 
 export async function POST(request: Request) {
   try {
-    const { messages, chatId } = (await request.json()) as { messages: ChatMessage[]; chatId?: string };
+    const { messages, chatId, lang } = (await request.json()) as { messages: ChatMessage[]; chatId?: string; lang?: string };
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return Response.json({ error: "Messages are required" }, { status: 400 });
     }
@@ -160,10 +167,11 @@ export async function POST(request: Request) {
         role: m.role === "user" ? "user" : "assistant",
         content: m.content,
       })),
+      lang: lang as "en" | "hi",
     });
 
     if (!stream) {
-      const reply = getFallbackResponse(userName, !!chart);
+      const reply = getFallbackResponse(userName, !!chart, lang);
       await saveHistory(reply);
       return Response.json({ reply, chatId: activeChatId });
     }

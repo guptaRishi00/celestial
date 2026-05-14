@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { lang, setLang, t } = useLanguage();
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -56,7 +58,7 @@ export default function Header() {
                 clipRule="evenodd"
               />
             </svg>
-            Chat with Pandit Ji
+            {t("header.chatWithPanditJi")}
           </a>
 
           {user ? (
@@ -81,7 +83,7 @@ export default function Header() {
                 href="/login"
                 className="rounded-lg px-4 py-2 text-sm font-bold text-white/80 font-kobe tracking-wide transition-all duration-200 hover:text-white"
               >
-                Log in
+                {t("header.logIn")}
               </a>
 
               {/* Sign Up */}
@@ -89,10 +91,19 @@ export default function Header() {
                 href="/login?mode=signup"
                 className="rounded-lg bg-hero-accent px-4 py-2 text-sm font-bold text-inverse-surface font-kobe tracking-wide transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(196,161,255,0.4)] active:scale-95"
               >
-                Sign up
+                {t("header.signUp")}
               </a>
             </>
           )}
+
+          {/* Language Toggle */}
+          <button
+            type="button"
+            onClick={() => setLang(lang === "en" ? "hi" : "en")}
+            className="flex items-center justify-center min-w-[48px] px-2 h-9 rounded-lg bg-white/5 border border-white/10 text-sm font-kobe font-bold text-white/80 tracking-wide transition-all duration-200 hover:bg-white/10 hover:text-white"
+          >
+            {lang === "en" ? "हिं" : "EN"}
+          </button>
         </div>
 
         {/* Mobile hamburger */}
@@ -140,7 +151,7 @@ export default function Header() {
                 clipRule="evenodd"
               />
             </svg>
-            Chat with Pandit Ji
+            {t("header.chatWithPanditJi")}
           </a>
 
           {user ? (
@@ -155,7 +166,7 @@ export default function Header() {
                 </span>
               </div>
               <span className="text-sm text-white/70 font-kobe tracking-wide">
-                My Profile
+                {t("header.myProfile")}
               </span>
             </a>
           ) : (
@@ -165,7 +176,7 @@ export default function Header() {
                 href="/login"
                 className="rounded-lg px-4 py-2.5 text-sm font-bold text-white/80 font-kobe tracking-wide text-left transition-all duration-200 hover:text-white hover:bg-white/5"
               >
-                Log in
+                {t("header.logIn")}
               </a>
 
               {/* Sign Up */}
@@ -173,10 +184,23 @@ export default function Header() {
                 href="/login?mode=signup"
                 className="rounded-lg bg-hero-accent px-4 py-2.5 text-sm font-bold text-inverse-surface font-kobe tracking-wide transition-all duration-300 active:scale-95 text-center"
               >
-                Sign up
+                {t("header.signUp")}
               </a>
             </>
           )}
+          
+          {/* Mobile Language Toggle */}
+          <div className="h-px bg-white/10 my-1" />
+          <button
+            type="button"
+            onClick={() => {
+              setLang(lang === "en" ? "hi" : "en");
+              setOpen(false);
+            }}
+            className="flex items-center justify-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-bold text-white/80 font-kobe tracking-wide transition-all duration-200 hover:bg-white/10 hover:text-white"
+          >
+            {lang === "en" ? "हिंदी में बदलें" : "Switch to English"}
+          </button>
         </div>
       </div>
     </header>

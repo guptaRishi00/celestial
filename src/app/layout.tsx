@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { LanguageProvider } from "@/lib/LanguageContext";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -76,8 +77,11 @@ export default function RootLayout({
       className={cn(voyage.variable, kobe.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-screen bg-surface text-on-surface font-kobe antialiased">
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );
 }
+

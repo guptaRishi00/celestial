@@ -1,7 +1,11 @@
+"use client";
 
 import Image from "next/image";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function HeroSection() {
+  const { t } = useLanguage();
+
   return (
     <section
       id="hero-section"
@@ -30,23 +34,21 @@ export default function HeroSection() {
         <div className="flex flex-col gap-7 max-w-xl">
           {/* Badge */}
           <span className="inline-flex items-center gap-2 w-fit rounded-full border border-white/20 bg-white/5 backdrop-blur-md px-4 py-1.5 text-xs tracking-[0.2em] uppercase text-hero-accent font-kobe">
-            ✦ Celestial Guidance
+            {t("hero.badge")}
           </span>
 
           {/* Title */}
           <h1 className="font-voyage font-bold text-5xl sm:text-6xl lg:text-7xl leading-[1.08] tracking-tight text-white">
-            Unlock the
+            {t("hero.titleLine1")}
             <br />
             <span className="">
-              Stars Within
+              {t("hero.titleLine2")}
             </span>
           </h1>
 
           {/* Description */}
           <p className="font-kobe text-base sm:text-lg leading-relaxed text-white/70 max-w-md">
-            Discover the cosmic blueprint written in your birth chart. Our
-            expert astrologers blend ancient wisdom with modern insight to
-            illuminate your path, relationships, and destiny.
+            {t("hero.description")}
           </p>
 
           {/* Buttons */}
@@ -55,13 +57,13 @@ export default function HeroSection() {
               href="/chat"
               className="rounded-full bg-hero-accent px-7 py-3 text-sm font-bold tracking-wide text-inverse-surface font-kobe transition-all duration-300 hover:scale-105 hover:shadow-[0_0_28px_rgba(196,161,255,0.45)] active:scale-95 cursor-pointer"
             >
-              Get Your Reading
+              {t("hero.getReading")}
             </a>
             <a
               href="#zodiac-section"
               className="rounded-full border border-white/25 bg-white/5 backdrop-blur-sm px-7 py-3 text-sm font-bold tracking-wide text-white font-kobe transition-all duration-300 hover:bg-white/15 hover:border-white/40 active:scale-95 cursor-pointer"
             >
-              Explore Signs
+              {t("hero.exploreSigns")}
             </a>
           </div>
 
@@ -73,7 +75,7 @@ export default function HeroSection() {
               <span className="inline-block w-7 h-7 rounded-full bg-hero-cool ring-2 ring-black/40" />
             </div>
             <span className="text-xs text-white/50 font-kobe tracking-wide">
-              2,400+ readings delivered this month
+              {t("hero.socialProof")}
             </span>
           </div>
         </div>

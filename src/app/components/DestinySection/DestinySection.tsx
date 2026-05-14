@@ -1,6 +1,11 @@
+"use client";
+
 import Image from "next/image";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function DestinySection() {
+  const { t } = useLanguage();
+
   return (
     <section
       id="destiny-section"
@@ -22,22 +27,19 @@ export default function DestinySection() {
       <div className="relative z-10 mx-auto w-full max-w-4xl px-6 sm:px-10 lg:px-16 flex flex-col items-center text-center">
         {/* ── Badge ── */}
         <span className="mb-5 inline-flex items-center gap-2 w-fit rounded-full border border-white/10 bg-[#0f0e0c]/80 backdrop-blur-md px-4 py-1.5 text-xs tracking-[0.2em] uppercase text-hero-accent font-kobe">
-          ✦ Tarot Reading
+          {t("destiny.badge")}
         </span>
 
         {/* ── Title ── */}
         <h2 className="font-voyage font-bold text-4xl sm:text-5xl lg:text-6xl leading-[1.12] tracking-tight text-white max-w-2xl">
-          Do You Want To Know More
+          {t("destiny.titleLine1")}
           <br className="hidden sm:block" />
-          {" "}About Your Destiny?
+          {" "}{t("destiny.titleLine2")}
         </h2>
 
         {/* ── Description ── */}
         <p className="mt-6 sm:mt-8 font-kobe text-sm sm:text-base leading-relaxed text-white/50 max-w-xl">
-          Melitaro Com Is Simply ✧ Dummy Text Of The Printing And Typesetting
-          Industry. Lorem Ipsum Has Been The Industry&apos;s Standard Dummy Text
-          Ever Since The 1500s, When An Unknown · ❋ · Printer Took A Galley Of
-          Type And Scrambled It To Make A Type Specimen Book
+          {t("destiny.description")}
         </p>
 
         {/* ── Cards Image ── */}

@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import LoginModal from "./LoginModal";
-import { PlusCircle, MessageSquare, Trash2 } from "lucide-react";
+import { PlusCircle, MessageSquare, Trash2, FileText } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface Message {
   id: string;
@@ -29,6 +30,10 @@ export default function ChatInterface() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportToast, setReportToast] = useState<{ message: string; type: "error" | "success" } | null>(null);
+
+  const { t, lang } = useLanguage();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,8 +91,12 @@ export default function ChatInterface() {
       const res = await fetch(`/api/chat/history?chatId=${chatId}`);
       const data = await res.json();
       if (data.messages) {
-        setMessages(data.messages);
-        setShowWelcome(data.messages.length === 0);
+        const messagesWithIds = data.messages.map((m: any, idx: number) => ({
+          ...m,
+          id: m.id || `msg-${idx}-${Date.now()}`
+        }));
+        setMessages(messagesWithIds);
+        setShowWelcome(messagesWithIds.length === 0);
       }
     } catch (e) {
     } finally {
@@ -129,10 +138,12 @@ export default function ChatInterface() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: updatedMessages.map((m) => ({
+            id: m.id,
             role: m.role,
             content: m.content,
           })),
           chatId: currentChatId,
+          lang,
         }),
       });
 
@@ -157,7 +168,7 @@ export default function ChatInterface() {
         if (data.chatId && currentChatId !== data.chatId) {
           setCurrentChatId(data.chatId);
           const firstMsg = updatedMessages.find(m => m.role === "user");
-          const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : "New Consultation";
+          const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : t("chat.newConsultation");
           upsertChatSession(data.chatId, title);
         }
 
@@ -198,7 +209,7 @@ export default function ChatInterface() {
                 if (meta.chatId && currentChatId !== meta.chatId) {
                   setCurrentChatId(meta.chatId);
                   const firstMsg = updatedMessages.find(m => m.role === "user");
-                  const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : "New Consultation";
+                  const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : t("chat.newConsultation");
                   upsertChatSession(meta.chatId, title);
                 }
               } catch { }
@@ -223,8 +234,7 @@ export default function ChatInterface() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content:
-          "🙏 Kshama karein beta, abhi thoda vyast hoon. Kripya thodi der mein phir prayaas karein.",
+        content: t("chat.errorMessage"),
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -237,6 +247,42 @@ export default function ChatInterface() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    }
+  };
+
+  const generateReport = async () => {
+    setIsGeneratingReport(true);
+    setReportToast(null);
+    try {
+      const res = await fetch("/api/report");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const msg = data?.error || t("chat.reportFailed");
+        if (res.status === 401) {
+          setShowLogin(true);
+          setReportToast({ message: t("chat.reportSignIn"), type: "error" });
+        } else {
+          setReportToast({ message: msg, type: "error" });
+        }
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const disposition = res.headers.get("Content-Disposition");
+      const match = disposition?.match(/filename="([^"]+)"/);
+      a.download = match?.[1] || "Kundali_Report.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setReportToast({ message: t("chat.reportSuccess"), type: "success" });
+    } catch {
+      setReportToast({ message: t("chat.networkError"), type: "error" });
+    } finally {
+      setIsGeneratingReport(false);
+      setTimeout(() => setReportToast(null), 5000);
     }
   };
 
@@ -257,17 +303,19 @@ export default function ChatInterface() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: currentMessages.map((m) => ({
+            id: m.id,
             role: m.role,
             content: m.content,
           })),
           chatId: currentChatId,
+          lang,
         }),
       });
       const data = await res.json();
       if (data.chatId) {
         setCurrentChatId(data.chatId);
         const firstMsg = currentMessages.find(m => m.role === "user");
-        const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : "New Consultation";
+        const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : t("chat.newConsultation");
         upsertChatSession(data.chatId, title);
       }
       if (data.reply) {
@@ -300,18 +348,18 @@ export default function ChatInterface() {
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-hero-accent/10 border border-hero-accent/30 text-hero-accent px-4 py-3 hover:bg-hero-accent/20 transition-all font-kobe tracking-wide text-sm cursor-pointer shadow-[0_0_15px_rgba(196,161,255,0.1)]"
           >
             <PlusCircle size={18} />
-            New Consultation
+            {t("chat.newConsultation")}
           </button>
         </div>
 
         <div className="px-4 pb-2">
-          <h3 className="text-[10px] text-white/30 uppercase tracking-widest font-kobe mb-1">Previous Sessions</h3>
+          <h3 className="text-[10px] text-white/30 uppercase tracking-widest font-kobe mb-1">{t("chat.previousSessions")}</h3>
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 pb-4 flex flex-col gap-1">
           {chatSessions.length === 0 ? (
             <div className="text-center text-xs text-white/20 font-kobe py-6">
-              No previous chats
+              {t("chat.noPreviousChats")}
             </div>
           ) : (
             chatSessions.map((chat) => (
@@ -327,7 +375,7 @@ export default function ChatInterface() {
                 <button
                   onClick={(e) => deleteChat(e, chat._id)}
                   className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                  title="Delete chat"
+                  title={t("chat.deleteChat")}
                 >
                   <Trash2 size={12} />
                 </button>
@@ -339,12 +387,12 @@ export default function ChatInterface() {
         {!user && (
           <div className="p-4 border-t border-white/5">
             <div className="rounded-xl bg-white/5 p-4 text-center border border-white/10">
-              <p className="text-xs text-white/40 font-kobe mb-3">Sign in to save your consultations</p>
+              <p className="text-xs text-white/40 font-kobe mb-3">{t("chat.signInToSave")}</p>
               <button
                 onClick={() => setShowLogin(true)}
                 className="w-full rounded-lg bg-white/10 px-3 py-2 text-xs text-white font-kobe hover:bg-white/20 transition-colors"
               >
-                Sign In
+                {t("chat.signIn")}
               </button>
             </div>
           </div>
@@ -360,7 +408,7 @@ export default function ChatInterface() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="font-kobe text-xs text-white/40 ml-1">Pandit Shastri Ji</span>
+          <span className="font-kobe text-xs text-white/40 ml-1">{t("chat.panditShastri")}</span>
         </div>
 
         {/* Messages container */}
@@ -378,21 +426,19 @@ export default function ChatInterface() {
                 </div>
 
                 <h2 className="font-voyage text-xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
-                  Pandit Shastri Ji
+                  {t("chat.panditShastri")}
                 </h2>
                 <p className="font-kobe text-xs sm:text-base text-white/40 max-w-md mb-5 sm:mb-8 leading-relaxed px-2">
-                  Namaste! I am a Vedic astrologer with 35 years of experience.
-                  Ask me about your kundali, rashifal, career, relationships, or
-                  any life guidance.
+                  {t("chat.welcomeDesc")}
                 </p>
 
                 {/* Suggestion chips */}
                 <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 max-w-lg">
                   {[
-                    "🌟 Tell me about my kundali",
-                    "💼 Career guidance",
-                    "💕 Marriage & relationships",
-                    "🔮 Today's rashifal",
+                    t("chat.suggestion1"),
+                    t("chat.suggestion2"),
+                    t("chat.suggestion3"),
+                    t("chat.suggestion4"),
                   ].map((suggestion) => (
                     <button
                       key={suggestion}
@@ -435,6 +481,17 @@ export default function ChatInterface() {
           </div>
         </div>
 
+        {/* Report toast notification */}
+        {reportToast && (
+          <div className={`absolute top-16 md:top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border backdrop-blur-xl text-sm font-kobe tracking-wide shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 ${
+            reportToast.type === "error"
+              ? "bg-red-500/10 border-red-500/20 text-red-400"
+              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          }`}>
+            {reportToast.message}
+          </div>
+        )}
+
         {/* Input bar */}
         <div className="border-t border-white/8 bg-black/30 backdrop-blur-xl px-2.5 sm:px-6 py-2.5 sm:py-4 relative z-10">
           <div className="max-w-3xl mx-auto flex items-center gap-2 sm:gap-3">
@@ -445,12 +502,37 @@ export default function ChatInterface() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Pandit Ji anything..."
+                placeholder={t("chat.inputPlaceholder")}
                 disabled={isLoading}
                 className="w-full rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm px-3.5 py-2.5 sm:px-5 sm:py-3.5 text-sm text-white font-kobe placeholder:text-white/25 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(196,161,255,0.08)] disabled:opacity-50"
                 id="chat-input"
               />
             </div>
+            <button
+              type="button"
+              onClick={generateReport}
+              disabled={isGeneratingReport}
+              className={`group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-300 flex-shrink-0 border ${
+                isGeneratingReport
+                  ? "bg-hero-warm/20 border-hero-warm/30 cursor-not-allowed"
+                  : "bg-white/[0.04] border-white/10 hover:bg-hero-warm/15 hover:border-hero-warm/40 hover:scale-105 hover:shadow-[0_0_20px_rgba(255,169,142,0.2)] active:scale-95 cursor-pointer"
+              }`}
+              id="generate-report-button"
+              title="Generate Kundali Report (PDF)"
+            >
+              {isGeneratingReport ? (
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-hero-warm" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : (
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 group-hover:text-hero-warm transition-colors duration-300" />
+              )}
+              {/* Tooltip */}
+              <span className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#1a1a1a] border border-white/10 text-[10px] text-white/70 font-kobe tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg">
+                {t("chat.generateReport")}
+              </span>
+            </button>
             <button
               type="button"
               onClick={sendMessage}
@@ -481,7 +563,7 @@ export default function ChatInterface() {
           </div>
           {!user && (
             <p className="max-w-3xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/20 font-kobe tracking-wide text-center">
-              ✦ Free for 2 messages • Sign up for unlimited
+              {t("chat.freeMessages")}
             </p>
           )}
         </div>
