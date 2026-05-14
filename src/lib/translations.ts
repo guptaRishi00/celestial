@@ -6,6 +6,7 @@ const translations = {
   "header.logIn": { en: "Log in", hi: "लॉग इन" },
   "header.signUp": { en: "Sign up", hi: "साइन अप" },
   "header.myProfile": { en: "My Profile", hi: "मेरी प्रोफ़ाइल" },
+  "header.generateReport": { en: "Kundli Report", hi: "कुंडली रिपोर्ट" },
 
   // ─── Hero Section ────────────────────────────────────────
   "hero.badge": { en: "✦ Celestial Guidance", hi: "✦ दिव्य मार्गदर्शन" },
