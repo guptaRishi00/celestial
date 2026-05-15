@@ -80,7 +80,7 @@ export default function Footer() {
               <a href="/" className="flex items-center gap-2 w-fit">
                 <span className="text-hero-accent text-2xl">✦</span>
                 <span className="font-voyage text-2xl font-bold text-white tracking-wide">
-                  Celestial
+                  Future Dekho
                 </span>
               </a>
               <p className="font-kobe text-sm leading-relaxed text-white/40 max-w-xs">

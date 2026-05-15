@@ -5,9 +5,14 @@ import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null,
+  );
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [reportToast, setReportToast] = useState<{ message: string; type: "error" | "success" } | null>(null);
+  const [reportToast, setReportToast] = useState<{
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
   const { lang, setLang, t } = useLanguage();
 
   const generateReport = async () => {
@@ -51,16 +56,16 @@ export default function Header() {
       .then((data) => {
         if (data.user) setUser(data.user);
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const initials = user
     ? user.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2)
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "";
 
   return (
@@ -70,11 +75,9 @@ export default function Header() {
         <a href="/" className="flex items-center gap-2">
           <span className="text-hero-accent text-xl">✦</span>
           <span className="font-voyage text-xl font-bold text-white tracking-wide">
-            Celestial
+            Future Dekho
           </span>
         </a>
-
-
 
         {/* Desktop actions */}
         <div className="hidden sm:flex items-center gap-3">
@@ -86,13 +89,38 @@ export default function Header() {
             className="flex items-center gap-1.5 rounded-lg bg-hero-warm/10 border border-hero-warm/30 px-3.5 py-2 text-sm text-hero-warm font-kobe tracking-wide transition-all duration-200 hover:bg-hero-warm/20 disabled:opacity-50"
           >
             {isGeneratingReport ? (
-              <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              <svg
+                className="w-4 h-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-90"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z"
+                  clipRule="evenodd"
+                />
               </svg>
             )}
             {t("header.generateReport")}
@@ -182,16 +210,19 @@ export default function Header() {
             aria-label="Toggle menu"
           >
             <span
-              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "rotate-45 translate-y-[5px]" : ""
-                }`}
+              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${
+                open ? "rotate-45 translate-y-[5px]" : ""
+              }`}
             />
             <span
-              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 ${open ? "opacity-0 scale-x-0" : ""
-                }`}
+              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 ${
+                open ? "opacity-0 scale-x-0" : ""
+              }`}
             />
             <span
-              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${open ? "-rotate-45 -translate-y-[5px]" : ""
-                }`}
+              className={`block w-4.5 h-[2px] bg-white rounded-full transition-all duration-300 origin-center ${
+                open ? "-rotate-45 -translate-y-[5px]" : ""
+              }`}
             />
           </button>
         </div>
@@ -199,8 +230,9 @@ export default function Header() {
 
       {/* Mobile dropdown */}
       <div
-        className={`sm:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-60 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
-          }`}
+        className={`sm:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          open ? "max-h-60 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+        }`}
       >
         <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl px-5 py-4 shadow-lg shadow-black/10">
           {/* Generate Report */}
@@ -214,13 +246,38 @@ export default function Header() {
             className="flex items-center gap-2 rounded-lg bg-hero-warm/10 border border-hero-warm/30 px-4 py-2.5 text-sm text-hero-warm font-kobe tracking-wide transition-all duration-200 hover:bg-hero-warm/20 disabled:opacity-50 text-left"
           >
             {isGeneratingReport ? (
-              <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              <svg
+                className="w-4 h-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-90"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5Zm2.25 8.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Zm0 3a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z"
+                  clipRule="evenodd"
+                />
               </svg>
             )}
             {t("header.generateReport")}
@@ -285,11 +342,13 @@ export default function Header() {
 
       {/* Report toast notification */}
       {reportToast && (
-        <div className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border backdrop-blur-xl text-sm font-kobe tracking-wide shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 ${
-          reportToast.type === "error"
-            ? "bg-red-500/10 border-red-500/20 text-red-400"
-            : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-        }`}>
+        <div
+          className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border backdrop-blur-xl text-sm font-kobe tracking-wide shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 ${
+            reportToast.type === "error"
+              ? "bg-red-500/10 border-red-500/20 text-red-400"
+              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          }`}
+        >
           {reportToast.message}
         </div>
       )}
