@@ -15,8 +15,10 @@ export default function MessageBubble({ message }: { message: Message }) {
 
   return (
     <div
-      className={`flex items-start gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-        isUser ? "flex-row-reverse ml-auto max-w-[90%] sm:max-w-[85%]" : "mr-auto max-w-[90%] sm:max-w-[85%]"
+      className={`flex items-start gap-2 sm:gap-2.5 md:gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+        isUser
+          ? "flex-row-reverse ml-auto max-w-[92%] sm:max-w-[85%] md:max-w-[80%] xl:max-w-[70%]"
+          : "mr-auto max-w-[92%] sm:max-w-[85%] md:max-w-[80%] xl:max-w-[75%]"
       }`}
     >
       {/* Avatar */}

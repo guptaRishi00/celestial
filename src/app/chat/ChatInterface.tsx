@@ -335,13 +335,22 @@ export default function ChatInterface() {
 
   return (
     <div className="flex flex-1 h-full w-full relative overflow-hidden">
-      {/* Mobile Sidebar Toggle overlay */}
+      {/* Sidebar overlay — shown when drawer is open below `lg` breakpoint */}
       {isSidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <div className={`fixed md:absolute md:relative z-50 inset-y-0 left-0 md:inset-auto h-full w-64 flex flex-col bg-[#080808]/95 backdrop-blur-xl border-r border-white/5 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+      {/* Sidebar
+          - Mobile / Tablet (< 1024px): drawer, off-canvas, slides in on hamburger tap
+          - Desktop (>= 1024px): permanent column, never animates
+          - Large desktop (>= 1280px): wider for better title readability */}
+      <aside
+        className={`fixed lg:relative z-50 inset-y-0 left-0 h-full
+          w-72 sm:w-80 lg:w-64 xl:w-72 2xl:w-80
+          flex flex-col bg-[#080808]/95 backdrop-blur-xl border-r border-white/5
+          transition-transform duration-300
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      >
         <div className="p-4">
           <button
             onClick={startNewChat}
@@ -397,23 +406,29 @@ export default function ChatInterface() {
             </div>
           </div>
         )}
-      </div>
+      </aside>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full bg-transparent overflow-hidden relative">
-        {/* Mobile header for sidebar toggle */}
-        <div className="md:hidden flex items-center px-2 py-2 border-b border-white/5 bg-black/40 backdrop-blur-md absolute top-0 w-full z-30">
-          <button onClick={() => setIsSidebarOpen(true)} className="text-white/60 p-1.5 hover:text-white transition-colors cursor-pointer">
+      {/* Main Chat Area — flex column so header / messages / input lay out naturally */}
+      <section className="flex-1 flex flex-col h-full bg-transparent overflow-hidden relative min-w-0">
+        {/* Mobile/Tablet header (< lg) — sidebar toggle + label. Hidden on desktop
+            where the sidebar is always visible. Now a real flow item rather than
+            absolutely positioned, so it can't overlap scrolling content. */}
+        <div className="lg:hidden flex items-center gap-2 px-3 sm:px-4 py-2 border-b border-white/5 bg-black/30 backdrop-blur-md flex-shrink-0">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="text-white/60 p-1.5 hover:text-white transition-colors cursor-pointer rounded-md hover:bg-white/5"
+            aria-label="Open consultations menu"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="font-kobe text-xs text-white/40 ml-1">{t("chat.panditShastri")}</span>
+          <span className="font-kobe text-xs sm:text-sm text-white/50 truncate">{t("chat.panditShastri")}</span>
         </div>
 
         {/* Messages container */}
-        <div className="flex-1 overflow-y-auto px-2.5 sm:px-6 py-3 sm:py-6 pt-14 md:pt-6">
-          <div className="max-w-3xl mx-auto flex flex-col gap-2.5 sm:gap-4">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-5 md:py-6">
+          <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex flex-col gap-2.5 sm:gap-3.5 md:gap-4">
             {/* Welcome state */}
             {showWelcome && messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 sm:py-24 text-center px-2">
@@ -492,10 +507,15 @@ export default function ChatInterface() {
           </div>
         )}
 
-        {/* Input bar */}
-        <div className="border-t border-white/8 bg-black/30 backdrop-blur-xl px-2.5 sm:px-6 py-2.5 sm:py-4 relative z-10">
-          <div className="max-w-3xl mx-auto flex items-center gap-2 sm:gap-3">
-            <div className="flex-1 relative">
+        {/* Input bar
+            - pb adds safe-area-inset for iPhone home indicator
+            - flex-shrink-0 so it never gets squeezed by the scroll area */}
+        <div
+          className="flex-shrink-0 border-t border-white/8 bg-black/30 backdrop-blur-xl px-3 sm:px-5 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4 relative z-10"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.625rem)" }}
+        >
+          <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex items-center gap-2 sm:gap-2.5 md:gap-3">
+            <div className="flex-1 relative min-w-0">
               <input
                 ref={inputRef}
                 type="text"
@@ -504,7 +524,7 @@ export default function ChatInterface() {
                 onKeyDown={handleKeyDown}
                 placeholder={t("chat.inputPlaceholder")}
                 disabled={isLoading}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm px-3.5 py-2.5 sm:px-5 sm:py-3.5 text-sm text-white font-kobe placeholder:text-white/25 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(196,161,255,0.08)] disabled:opacity-50"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm px-3.5 py-2.5 sm:px-4 sm:py-3 md:px-5 md:py-3.5 text-sm text-white font-kobe placeholder:text-white/25 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(196,161,255,0.08)] disabled:opacity-50"
                 id="chat-input"
               />
             </div>
@@ -562,12 +582,12 @@ export default function ChatInterface() {
             </button>
           </div>
           {!user && (
-            <p className="max-w-3xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/20 font-kobe tracking-wide text-center">
+            <p className="max-w-3xl xl:max-w-4xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/20 font-kobe tracking-wide text-center">
               {t("chat.freeMessages")}
             </p>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Login Modal */}
       {showLogin && (
