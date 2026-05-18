@@ -127,13 +127,13 @@ const translations = {
     hi: "पंडित जी से कुछ भी पूछें...",
   },
   "chat.freeMessages": {
-    en: "✦ Free for 2 messages • Sign up for unlimited",
-    hi: "✦ 2 संदेश मुफ्त • असीमित के लिए साइन अप करें",
+    en: "Free for 2 messages • Sign up for unlimited",
+    hi: "2 संदेश मुफ्त • असीमित के लिए साइन अप करें",
   },
   "chat.generateReport": { en: "Generate Report", hi: "रिपोर्ट बनाएं" },
   "chat.reportSuccess": {
-    en: "Kundali report downloaded successfully! ✦",
-    hi: "कुंडली रिपोर्ट सफलतापूर्वक डाउनलोड हुई! ✦",
+    en: "Kundali report downloaded successfully!",
+    hi: "कुंडली रिपोर्ट सफलतापूर्वक डाउनलोड हुई!",
   },
   "chat.reportSignIn": {
     en: "Please sign in to generate your Kundali report.",
@@ -180,13 +180,13 @@ const translations = {
     hi: "जैसे, दिल्ली, भारत",
   },
   "login.optionalNote": {
-    en: "✦ Optional — helps Pandit Ji read your kundali",
-    hi: "✦ वैकल्पिक — पंडित जी को कुंडली पढ़ने में मदद करता है",
+    en: "Optional — helps Pandit Ji read your kundali",
+    hi: "वैकल्पिक — पंडित जी को कुंडली पढ़ने में मदद करता है",
   },
   "login.email": { en: "Email", hi: "ईमेल" },
   "login.password": { en: "Password", hi: "पासवर्ड" },
   "login.pleaseWait": { en: "Please wait...", hi: "कृपया प्रतीक्षा करें..." },
-  "login.createAccount": { en: "Create Account ", hi: "खाता बनाएं ✦" },
+  "login.createAccount": { en: "Create Account ", hi: "खाता बनाएं" },
   "login.signInBtn": { en: "Sign In ", hi: "साइन इन " },
   "login.alreadyHaveAccount": {
     en: "Already have an account? Sign in",
@@ -224,8 +224,8 @@ const translations = {
   "profile.saving": { en: "Saving...", hi: "सहेजा जा रहा है..." },
   "profile.saveChanges": { en: "Save Changes ", hi: "परिवर्तन सहेजें " },
   "profile.addBirthDetails": {
-    en: "✦ Add your birth details for personalized kundali readings from Pandit Ji",
-    hi: "✦ पंडित जी से व्यक्तिगत कुंडली पढ़वाने के लिए अपने जन्म विवरण जोड़ें",
+    en: "Add your birth details for personalized kundali readings from Pandit Ji",
+    hi: "पंडित जी से व्यक्तिगत कुंडली पढ़वाने के लिए अपने जन्म विवरण जोड़ें",
   },
   "profile.quickActions": { en: "Quick Actions", hi: "त्वरित कार्य" },
   "profile.chatWithPanditJi": {
