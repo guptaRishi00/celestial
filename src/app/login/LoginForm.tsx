@@ -61,7 +61,7 @@ export default function LoginForm() {
       {/* Header */}
       <div className="px-8 pt-8 pb-4 text-center">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-hero-accent/20 to-hero-warm/20 border border-hero-accent/30 flex items-center justify-center text-2xl mx-auto mb-4 shadow-[0_0_30px_rgba(196,161,255,0.15)]">
-          {isSignup ? "✦" : "🙏"}
+          🙏
         </div>
         <h1 className="font-voyage text-2xl font-bold text-white mb-1">
           {isSignup ? "Begin Your Journey" : "Welcome Back"}
@@ -74,11 +74,17 @@ export default function LoginForm() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="px-8 pb-8 pt-2 flex flex-col gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="px-8 pb-8 pt-2 flex flex-col gap-4"
+      >
         {isSignup && (
           <>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="login-name" className="text-xs text-white/40 font-kobe tracking-wide">
+              <label
+                htmlFor="login-name"
+                className="text-xs text-white/40 font-kobe tracking-wide"
+              >
                 Full Name <span className="text-hero-accent">*</span>
               </label>
               <input
@@ -95,7 +101,7 @@ export default function LoginForm() {
             {/* Birth details section */}
             <div className="mt-1 mb-1">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-hero-accent text-sm">✧</span>
+                {/* <span className="text-hero-accent text-sm">✧</span> */}
                 <span className="text-xs text-white/30 font-kobe tracking-wider uppercase">
                   Birth Details — for your kundali
                 </span>
@@ -105,7 +111,10 @@ export default function LoginForm() {
                 {/* DOB + Gender row */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="login-dob" className="text-xs text-white/40 font-kobe tracking-wide">
+                    <label
+                      htmlFor="login-dob"
+                      className="text-xs text-white/40 font-kobe tracking-wide"
+                    >
                       Date of Birth
                     </label>
                     <input
@@ -117,7 +126,10 @@ export default function LoginForm() {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="login-gender" className="text-xs text-white/40 font-kobe tracking-wide">
+                    <label
+                      htmlFor="login-gender"
+                      className="text-xs text-white/40 font-kobe tracking-wide"
+                    >
                       Gender
                     </label>
                     <select
@@ -126,17 +138,28 @@ export default function LoginForm() {
                       onChange={(e) => setGender(e.target.value)}
                       className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white font-kobe outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.07] appearance-none cursor-pointer [color-scheme:dark]"
                     >
-                      <option value="" className="bg-[#1a1a1a]">Select</option>
-                      <option value="Male" className="bg-[#1a1a1a]">Male</option>
-                      <option value="Female" className="bg-[#1a1a1a]">Female</option>
-                      <option value="Other" className="bg-[#1a1a1a]">Other</option>
+                      <option value="" className="bg-[#1a1a1a]">
+                        Select
+                      </option>
+                      <option value="Male" className="bg-[#1a1a1a]">
+                        Male
+                      </option>
+                      <option value="Female" className="bg-[#1a1a1a]">
+                        Female
+                      </option>
+                      <option value="Other" className="bg-[#1a1a1a]">
+                        Other
+                      </option>
                     </select>
                   </div>
                 </div>
 
                 {/* Birth time */}
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="login-birthtime" className="text-xs text-white/40 font-kobe tracking-wide">
+                  <label
+                    htmlFor="login-birthtime"
+                    className="text-xs text-white/40 font-kobe tracking-wide"
+                  >
                     Birth Time
                   </label>
                   <input
@@ -150,7 +173,10 @@ export default function LoginForm() {
 
                 {/* Birth place */}
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="login-birthplace" className="text-xs text-white/40 font-kobe tracking-wide">
+                  <label
+                    htmlFor="login-birthplace"
+                    className="text-xs text-white/40 font-kobe tracking-wide"
+                  >
                     Birth Place
                   </label>
                   <input
@@ -165,14 +191,18 @@ export default function LoginForm() {
               </div>
 
               <p className="text-[11px] text-white/15 font-kobe mt-2 tracking-wide">
-                ✦ These details help Pandit Ji read your kundali accurately. You can add them later too.
+                These details help Pandit Ji read your kundali accurately. You
+                can add them later too.
               </p>
             </div>
           </>
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="login-email" className="text-xs text-white/40 font-kobe tracking-wide">
+          <label
+            htmlFor="login-email"
+            className="text-xs text-white/40 font-kobe tracking-wide"
+          >
             Email <span className="text-hero-accent">*</span>
           </label>
           <input
@@ -187,7 +217,10 @@ export default function LoginForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="login-password" className="text-xs text-white/40 font-kobe tracking-wide">
+          <label
+            htmlFor="login-password"
+            className="text-xs text-white/40 font-kobe tracking-wide"
+          >
             Password <span className="text-hero-accent">*</span>
           </label>
           <div className="relative">
@@ -225,17 +258,15 @@ export default function LoginForm() {
           disabled={loading}
           className="mt-1 rounded-xl bg-hero-accent px-6 py-3.5 text-sm font-bold text-inverse-surface font-kobe tracking-wide transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_24px_rgba(196,161,255,0.4)] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
         >
-          {loading
-            ? "Please wait..."
-            : isSignup
-            ? "Create Account ✦"
-            : "Sign In ✦"}
+          {loading ? "Please wait..." : isSignup ? "Create Account" : "Sign In"}
         </button>
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-1">
           <div className="flex-1 h-px bg-white/8" />
-          <span className="text-[11px] text-white/20 font-kobe tracking-wider uppercase">or</span>
+          <span className="text-[11px] text-white/20 font-kobe tracking-wider uppercase">
+            or
+          </span>
           <div className="flex-1 h-px bg-white/8" />
         </div>
 
