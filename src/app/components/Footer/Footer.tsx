@@ -78,8 +78,8 @@ export default function Footer() {
             {/* Brand Column */}
             <div className="flex flex-col gap-5 mb-4 lg:mb-0">
               <a href="/" className="flex items-center gap-2 w-fit">
-                <span className="text-hero-accent text-2xl">✦</span>
-                <span className="font-voyage text-2xl font-bold text-white tracking-wide">
+                {/* <span className="text-hero-accent text-2xl">✦</span> */}
+                <span className="font-voyage text-2xl font-bold text-hero-accent tracking-wide">
                   Future Dekho
                 </span>
               </a>
@@ -93,7 +93,7 @@ export default function Footer() {
               const titleKey = `footer.${title.toLowerCase()}` as any;
               return (
                 <div key={title} className="flex flex-col gap-4">
-                  <h4 className="font-voyage text-sm font-bold text-white tracking-wide">
+                  <h4 className="font-voyage text-xl font-bold text-white tracking-wide">
                     {t(titleKey)}
                   </h4>
                   <ul className="flex flex-col gap-2.5">

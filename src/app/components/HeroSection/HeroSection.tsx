@@ -29,7 +29,6 @@ export default function HeroSection() {
 
       {/* ── Content Grid ── */}
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-16 pt-36 pb-24 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-
         {/* ── Left: Text Column ── */}
         <div className="flex flex-col gap-7 max-w-xl">
           {/* Badge */}
@@ -41,9 +40,7 @@ export default function HeroSection() {
           <h1 className="font-voyage font-bold text-5xl sm:text-6xl lg:text-7xl leading-[1.08] tracking-tight text-white">
             {t("hero.titleLine1")}
             <br />
-            <span className="">
-              {t("hero.titleLine2")}
-            </span>
+            <span className="">{t("hero.titleLine2")}</span>
           </h1>
 
           {/* Description */}
@@ -70,9 +67,17 @@ export default function HeroSection() {
           {/* Social proof */}
           <div className="flex items-center gap-3 mt-2">
             <div className="flex -space-x-2">
-              <span className="inline-block w-7 h-7 rounded-full bg-hero-accent ring-2 ring-black/40" />
-              <span className="inline-block w-7 h-7 rounded-full bg-hero-warm ring-2 ring-black/40" />
-              <span className="inline-block w-7 h-7 rounded-full bg-hero-cool ring-2 ring-black/40" />
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-hero-accent ring-2 ring-black/40 text-[10px] font-semibold text-white">
+                RS
+              </span>
+
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-hero-warm ring-2 ring-black/40 text-[10px] font-semibold text-black">
+                AK
+              </span>
+
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-hero-cool ring-2 ring-black/40 text-[10px] font-semibold text-white">
+                ZN
+              </span>
             </div>
             <span className="text-xs text-white/50 font-kobe tracking-wide">
               {t("hero.socialProof")}

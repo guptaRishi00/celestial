@@ -12,7 +12,7 @@ const translations = {
   "header.generateReport": { en: "Kundli Report", hi: "कुंडली रिपोर्ट" },
 
   // ─── Hero Section ────────────────────────────────────────
-  "hero.badge": { en: "✦ Celestial Guidance", hi: "✦ दिव्य मार्गदर्शन" },
+  "hero.badge": { en: "Celestial Guidance", hi: "दिव्य मार्गदर्शन" },
   "hero.titleLine1": { en: "Unlock the", hi: "खोलें अपने" },
   "hero.titleLine2": { en: "Stars Within", hi: "भाग्य के तारे" },
   "hero.description": {
@@ -27,7 +27,7 @@ const translations = {
   },
 
   // ─── Zodiac Section ──────────────────────────────────────
-  "zodiac.badge": { en: "✦ Daily Guidance", hi: "✦ दैनिक मार्गदर्शन" },
+  "zodiac.badge": { en: "Daily Guidance", hi: "दैनिक मार्गदर्शन" },
   "zodiac.titleLine1": { en: "Your Daily", hi: "आपका दैनिक" },
   "zodiac.titleLine2": { en: "Horoscope", hi: "राशिफल" },
   "zodiac.subtitle": {
@@ -46,7 +46,7 @@ const translations = {
   },
 
   // ─── Destiny Section ─────────────────────────────────────
-  "destiny.badge": { en: "✦ Tarot Reading", hi: "✦ टैरो रीडिंग" },
+  "destiny.badge": { en: "Tarot Reading", hi: "टैरो रीडिंग" },
   "destiny.titleLine1": {
     en: "Do You Want To Know More",
     hi: "क्या आप अपने भाग्य के",
@@ -61,7 +61,7 @@ const translations = {
   },
 
   // ─── Globe Section ───────────────────────────────────────
-  "globe.badge": { en: "✦ Global Reach", hi: "✦ वैश्विक पहुँच" },
+  "globe.badge": { en: "Global Reach", hi: "वैश्विक पहुँच" },
   "globe.titleLine1": { en: "Celestial Guidance,", hi: "दुनिया भर में," },
   "globe.titleLine2": { en: "Across the World", hi: "दिव्य मार्गदर्शन" },
   "globe.description": {
@@ -70,7 +70,7 @@ const translations = {
   },
 
   // ─── Footer ──────────────────────────────────────────────
-  "footer.stayConnected": { en: "✦ Stay Connected", hi: "✦ जुड़े रहें" },
+  "footer.stayConnected": { en: "Stay Connected", hi: "जुड़े रहें" },
   "footer.newsletterTitle1": { en: "Receive Your Daily", hi: "अपना दैनिक" },
   "footer.newsletterTitle2": {
     en: "Cosmic Insights",
@@ -81,7 +81,7 @@ const translations = {
     hi: "हज़ारों साधकों से जुड़ें जो हर सुबह दिव्य मार्गदर्शन से अपना दिन शुरू करते हैं।",
   },
   "footer.emailPlaceholder": { en: "Enter your email", hi: "ईमेल दर्ज करें" },
-  "footer.subscribe": { en: "Subscribe ✦", hi: "सदस्यता लें ✦" },
+  "footer.subscribe": { en: "Subscribe ", hi: "सदस्यता लें " },
   "footer.brandDesc": {
     en: "Bridging ancient celestial wisdom with modern insight to illuminate your path through the cosmos.",
     hi: "प्राचीन दिव्य ज्ञान को आधुनिक अंतर्दृष्टि से जोड़कर ब्रह्मांड में आपका मार्ग प्रकाशित करना।",
@@ -186,8 +186,8 @@ const translations = {
   "login.email": { en: "Email", hi: "ईमेल" },
   "login.password": { en: "Password", hi: "पासवर्ड" },
   "login.pleaseWait": { en: "Please wait...", hi: "कृपया प्रतीक्षा करें..." },
-  "login.createAccount": { en: "Create Account ✦", hi: "खाता बनाएं ✦" },
-  "login.signInBtn": { en: "Sign In ✦", hi: "साइन इन ✦" },
+  "login.createAccount": { en: "Create Account ", hi: "खाता बनाएं ✦" },
+  "login.signInBtn": { en: "Sign In ", hi: "साइन इन " },
   "login.alreadyHaveAccount": {
     en: "Already have an account? Sign in",
     hi: "पहले से खाता है? साइन इन करें",
@@ -222,7 +222,7 @@ const translations = {
     hi: "जैसे, मुंबई, महाराष्ट्र",
   },
   "profile.saving": { en: "Saving...", hi: "सहेजा जा रहा है..." },
-  "profile.saveChanges": { en: "Save Changes ✦", hi: "परिवर्तन सहेजें ✦" },
+  "profile.saveChanges": { en: "Save Changes ", hi: "परिवर्तन सहेजें " },
   "profile.addBirthDetails": {
     en: "✦ Add your birth details for personalized kundali readings from Pandit Ji",
     hi: "✦ पंडित जी से व्यक्तिगत कुंडली पढ़वाने के लिए अपने जन्म विवरण जोड़ें",
@@ -244,8 +244,8 @@ const translations = {
   "profile.signOut": { en: "Sign Out", hi: "साइन आउट" },
   "profile.signingOut": { en: "Signing out...", hi: "साइन आउट हो रहा है..." },
   "profile.updated": {
-    en: "Profile updated successfully! ✦",
-    hi: "प्रोफ़ाइल सफलतापूर्वक अपडेट हुई! ✦",
+    en: "Profile updated successfully! ",
+    hi: "प्रोफ़ाइल सफलतापूर्वक अपडेट हुई! ",
   },
   "profile.saveFailed": {
     en: "Failed to save. Try again.",
