@@ -1,6 +1,7 @@
 import type { Db, ObjectId, WithId } from "mongodb";
 
-export const DEFAULT_CHAT_TOKENS = 50;
+export const DEFAULT_CHAT_TOKENS = 20;
+export const CHAT_MESSAGE_TOKEN_COST = 10;
 export const TOKEN_REFILL_AMOUNT = 100;
 export const TOKEN_REFILL_PRICE_INR = 50;
 export const REPORT_PRICE_INR = 10;

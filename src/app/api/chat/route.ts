@@ -12,6 +12,7 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   ensureUserBillingFields,
   getChatTokens,
+  CHAT_MESSAGE_TOKEN_COST,
   type UserBillingDocument,
 } from "@/lib/billing";
 import { getDb } from "@/lib/mongodb";
@@ -37,13 +38,32 @@ async function getOrComputeChart(
   dbUser: ChatDbUser,
 ): Promise<NatalChart | null> {
   if (dbUser.natalChart?.version) return dbUser.natalChart;
-  if (!dbUser.dob || !dbUser.birthTime) return null;
+
+  // 🔍 DEBUG LOGS: Check if fields are actually available
+  console.log("=== PANDIT JI KUNDALI DEBUG ===");
+  console.log("User DB Document:", JSON.stringify(dbUser, null, 2));
+  console.log("DOB found:", dbUser.dob);
+  console.log("Birth Time found:", dbUser.birthTime);
+
+  if (!dbUser.dob || !dbUser.birthTime) {
+    console.warn(
+      "❌ Kundali skipped: dob or birthTime is missing in DB record!",
+    );
+    return null;
+  }
+
   const chart = await computeNatalChart({
     dob: dbUser.dob,
     birthTime: dbUser.birthTime,
     birthPlace: dbUser.birthPlace || undefined,
   });
-  if (chart) {
+
+  if (!chart) {
+    console.error(
+      "❌ computeNatalChart returned NULL! Check your ASTROLOGY_API_KEY or coordinates calculation.",
+    );
+  } else {
+    console.log("✅ Kundali computed successfully for Chat context!");
     const db = await getDb();
     await db
       .collection("users")
@@ -105,7 +125,6 @@ export async function POST(request: Request) {
     let dbUser: ChatDbUser | null = null;
     let userName = "beta";
 
-    // Guest path — enforce limit
     if (!authUser) {
       const cookieStore = await cookies();
       const guestCountCookie = cookieStore.get("celestial_guest_count");
@@ -131,11 +150,12 @@ export async function POST(request: Request) {
         const userId = new ObjectId(authUser.userId);
         await ensureUserBillingFields(db, userId);
 
+        // Atomic check and 10 token deduction
         dbUser = await db
           .collection<ChatDbUser>("users")
           .findOneAndUpdate(
-            { _id: userId, chatTokens: { $gt: 0 } },
-            { $inc: { chatTokens: -1 } },
+            { _id: userId, chatTokens: { $gte: CHAT_MESSAGE_TOKEN_COST } },
+            { $inc: { chatTokens: -CHAT_MESSAGE_TOKEN_COST } },
             { projection: { password: 0 }, returnDocument: "after" },
           );
 
@@ -144,15 +164,11 @@ export async function POST(request: Request) {
             .collection("users")
             .findOne({ _id: userId }, { projection: { chatTokens: 1 } });
 
-          if (!existingUser) {
-            return Response.json({ error: "User not found" }, { status: 404 });
-          }
-
           return Response.json(
             {
               error: "No chat tokens remaining",
               requiresRecharge: true,
-              chatTokens: 0,
+              chatTokens: existingUser ? (existingUser.chatTokens ?? 0) : 0,
             },
             { status: 402 },
           );
@@ -168,7 +184,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Chart lookup / compute. Guests don't get charts (they have no birth details).
     let chart: NatalChart | null = null;
     if (authUser && dbUser) {
       chart = await getOrComputeChart(new ObjectId(authUser.userId), dbUser);
@@ -176,7 +191,6 @@ export async function POST(request: Request) {
 
     let activeChatId = chatId;
 
-    // Create new chat document immediately so it appears in sidebar instantly
     if (authUser && (!activeChatId || !ObjectId.isValid(activeChatId))) {
       try {
         const db = await getDb();
@@ -220,17 +234,13 @@ export async function POST(request: Request) {
       }
     };
 
-    // Pipeline: intent & transits in parallel, skip reasoning to reduce TTFB
     const [intent, transits] = await Promise.all([
       classifyIntent(lastUserMessage, messages.slice(0, -1)),
       chart ? getEnrichedTransits(chart) : Promise.resolve(null),
     ]);
 
-    // We skip runReasoningPass to reduce Time-To-First-Byte.
-    // The Persona model is capable of reasoning directly from the chart digest.
     const reasoning = null;
 
-    // Stage C — persona stream
     const stream = await streamPersonaResponse({
       question: lastUserMessage,
       userName,

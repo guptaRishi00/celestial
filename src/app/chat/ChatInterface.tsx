@@ -64,7 +64,6 @@ export default function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Optimistically add or update a chat session in the sidebar
   const upsertChatSession = (chatId: string, title: string) => {
     setChatSessions((prev) => {
       const exists = prev.some((c) => c._id === chatId);
@@ -91,7 +90,6 @@ export default function ChatInterface() {
     setUser((prev) => (prev ? { ...prev, chatTokens } : prev));
   };
 
-  // Check auth on mount
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
@@ -104,8 +102,6 @@ export default function ChatInterface() {
       .catch(() => {});
   }, [fetchChatSessions]);
 
-  // Auto-scroll to bottom
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Scroll whenever chat content or loading state changes.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
@@ -156,7 +152,8 @@ export default function ChatInterface() {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
-    if (user && user.chatTokens <= 0) {
+    // Token depletion check (Requires at least 10 tokens)
+    if (user && user.chatTokens < 10) {
       setReportToast({
         message: "Recharge tokens to continue your consultation.",
         type: "error",
@@ -213,13 +210,10 @@ export default function ChatInterface() {
         return;
       }
 
-      // Server returned an error page (HTML) — bail out with a friendly message
-      // instead of rendering Next.js's error markup into the chat bubble.
       if (!res.ok || contentType.includes("text/html")) {
         throw new Error(`Chat API returned ${res.status}`);
       }
 
-      // Handle JSON responses (fallback, login required, errors)
       if (contentType.includes("application/json")) {
         const data = await res.json();
         updateChatTokens(data.chatTokens);
@@ -249,7 +243,6 @@ export default function ChatInterface() {
           setMessages((prev) => [...prev, assistantMessage]);
         }
       } else {
-        // Handle streaming text response
         const reader = res.body?.getReader();
         if (!reader) throw new Error("No reader");
 
@@ -258,7 +251,6 @@ export default function ChatInterface() {
         let fullText = "";
         let isFirstChunk = true;
 
-        // Add empty assistant message that we'll update
         setMessages((prev) => [
           ...prev,
           { id: assistantId, role: "assistant", content: "" },
@@ -272,7 +264,6 @@ export default function ChatInterface() {
           const text = decoder.decode(value, { stream: true });
 
           if (isFirstChunk) {
-            // First chunk contains JSON with chatId followed by newline
             const newlineIdx = text.indexOf("\n");
             if (newlineIdx !== -1) {
               try {
@@ -292,7 +283,6 @@ export default function ChatInterface() {
               } catch {}
               fullText += text.substring(newlineIdx + 1);
             } else {
-              // Entire first chunk is metadata, skip
               try {
                 const meta = JSON.parse(text);
                 updateChatTokens(meta.chatTokens);
@@ -483,17 +473,16 @@ export default function ChatInterface() {
         setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch {
-      // silently fail
+      // fail silently
     } finally {
       setIsLoading(false);
     }
   };
 
-  const hasNoTokens = Boolean(user && user.chatTokens <= 0);
+  const hasNoTokens = Boolean(user && user.chatTokens < 10);
 
   return (
     <div className="flex flex-1 h-full w-full relative overflow-hidden">
-      {/* Sidebar overlay — shown when drawer is open below `lg` breakpoint */}
       {isSidebarOpen && (
         <button
           type="button"
@@ -503,10 +492,6 @@ export default function ChatInterface() {
         />
       )}
 
-      {/* Sidebar
-          - Mobile / Tablet (< 1024px): drawer, off-canvas, slides in on hamburger tap
-          - Desktop (>= 1024px): permanent column, never animates
-          - Large desktop (>= 1280px): wider for better title readability */}
       <aside
         className={`fixed lg:relative z-50 inset-y-0 left-0 h-full
           w-72 sm:w-80 lg:w-64 xl:w-72 2xl:w-80
@@ -590,11 +575,7 @@ export default function ChatInterface() {
         )}
       </aside>
 
-      {/* Main Chat Area — flex column so header / messages / input lay out naturally */}
       <section className="flex-1 flex flex-col h-full bg-transparent overflow-hidden relative min-w-0">
-        {/* Mobile/Tablet header (< lg) — sidebar toggle + label. Hidden on desktop
-            where the sidebar is always visible. Now a real flow item rather than
-            absolutely positioned, so it can't overlap scrolling content. */}
         <div className="lg:hidden flex items-center gap-2 px-3 sm:px-4 py-2 border-b border-white/5 bg-black/30 backdrop-blur-md flex-shrink-0">
           <button
             type="button"
@@ -623,13 +604,10 @@ export default function ChatInterface() {
           </span>
         </div>
 
-        {/* Messages container */}
         <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-5 md:py-6">
           <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex flex-col gap-2.5 sm:gap-3.5 md:gap-4">
-            {/* Welcome state */}
             {showWelcome && messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-8 sm:py-24 text-center px-2">
-                {/* Pandit Avatar */}
                 <div className="relative mb-4 sm:mb-6">
                   <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border-2 border-hero-accent/40 flex items-center justify-center text-2xl sm:text-4xl shadow-[0_0_40px_rgba(196,161,255,0.2)]">
                     🙏
@@ -644,7 +622,6 @@ export default function ChatInterface() {
                   {t("chat.welcomeDesc")}
                 </p>
 
-                {/* Suggestion chips */}
                 <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 max-w-lg">
                   {[
                     t("chat.suggestion1"),
@@ -668,12 +645,10 @@ export default function ChatInterface() {
               </div>
             )}
 
-            {/* Messages */}
             {messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />
             ))}
 
-            {/* Typing indicator */}
             {isLoading && (
               <div className="flex items-start gap-2 sm:gap-3 max-w-[90%] sm:max-w-[85%]">
                 <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border border-hero-accent/30 flex items-center justify-center text-sm sm:text-base flex-shrink-0">
@@ -693,7 +668,6 @@ export default function ChatInterface() {
           </div>
         </div>
 
-        {/* Report toast notification */}
         {reportToast && (
           <div
             className={`absolute top-16 md:top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border backdrop-blur-xl text-sm font-kobe tracking-wide shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 ${
@@ -706,9 +680,6 @@ export default function ChatInterface() {
           </div>
         )}
 
-        {/* Input bar
-            - pb adds safe-area-inset for iPhone home indicator
-            - flex-shrink-0 so it never gets squeezed by the scroll area */}
         <div
           className="flex-shrink-0 border-t border-white/8 bg-black/30 backdrop-blur-xl px-3 sm:px-5 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4 relative z-10"
           style={{
@@ -766,7 +737,6 @@ export default function ChatInterface() {
               ) : (
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 group-hover:text-hero-warm transition-colors duration-300" />
               )}
-              {/* Tooltip */}
               <span className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#1a1a1a] border border-white/10 text-[10px] text-white/70 font-kobe tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg">
                 {t("chat.generateReport")}
               </span>
@@ -858,7 +828,7 @@ export default function ChatInterface() {
             </button>
           </div>
           {user ? (
-            <p className="max-w-3xl xl:max-w-4xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/25 font-kobe tracking-wide text-center">
+            <p className="max-w-3xl xl:max-w-4xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] lg:text-md text-hero-accent font-bold font-kobe tracking-wide text-center">
               Tokens: {user.chatTokens}
             </p>
           ) : (
@@ -869,7 +839,6 @@ export default function ChatInterface() {
         </div>
       </section>
 
-      {/* Login Modal */}
       {showLogin && (
         <LoginModal
           onClose={() => setShowLogin(false)}

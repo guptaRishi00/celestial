@@ -65,8 +65,8 @@ export default function Header() {
       const order = await createPaymentOrder("report", 10);
       const checkoutResponse = await openRazorpayCheckout({
         order,
-        name: "Celestial AI",
-        description: "Detailed Astrology Report",
+        name: "Future Dekho",
+        description: "Detailed Kundli Report",
       });
       const verification = await verifyRazorpayPayment(
         checkoutResponse,
@@ -120,8 +120,8 @@ export default function Header() {
       <nav className="relative flex items-center justify-between rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl px-5 py-3 shadow-lg shadow-black/10">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
-          <span className="text-hero-accent text-xl">✦</span>
-          <span className="font-voyage text-xl font-bold text-white tracking-wide">
+          {/* <span className="text-hero-accent text-xl">✦</span> */}
+          <span className="font-voyage text-xl font-bold text-hero-accent tracking-wide">
             Future Dekho
           </span>
         </a>

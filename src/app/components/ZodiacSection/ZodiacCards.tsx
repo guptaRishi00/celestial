@@ -54,7 +54,7 @@ export default function ZodiacCards({ signs, today }: ZodiacCardProps) {
         {signs.map((sign) => {
           const signNameKey = `sign.${sign.name}` as any;
           const tattvaKey = `tattva.${sign.tattva}` as any;
-          
+
           return (
             <Link
               key={sign.name}
@@ -103,9 +103,7 @@ export default function ZodiacCards({ signs, today }: ZodiacCardProps) {
               </p>
 
               {/* CTA */}
-              <span 
-                className="mt-auto font-kobe text-xs tracking-widest uppercase text-hero-accent/70 transition-all duration-300 group-hover:text-hero-accent"
-              >
+              <span className="mt-auto font-kobe text-xs tracking-widest uppercase text-hero-accent/70 transition-all duration-300 group-hover:text-hero-accent">
                 {t("zodiac.readMore")}
               </span>
             </Link>
