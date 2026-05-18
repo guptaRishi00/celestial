@@ -120,10 +120,15 @@ export default function Footer() {
         </div>
 
         {/* ── Bottom Bar ── */}
-        <div className="mx-auto w-full  px-6 sm:px-10 lg:px-16 py-8">
+        <div className="mx-auto w-full  px-6 sm:px-10 lg:px-16 py-8 flex flex-col lg:flex-row gap-3 items-center justify-between">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="font-kobe text-xs text-white/25 tracking-wide">
               © {new Date().getFullYear()} {t("footer.copyright")}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="font-kobe text-xs text-white/25 tracking-wide">
+              Made by Softexedge
             </p>
           </div>
         </div>

@@ -28,9 +28,9 @@ export default function ProfilePage() {
       {/* ── Top nav ── */}
       <header className="relative z-20 flex items-center justify-between px-6 py-5">
         <a href="/" className="flex items-center gap-2">
-          <span className="text-hero-accent text-xl">✦</span>
-          <span className="font-voyage text-xl font-bold text-white tracking-wide">
-            Celestial
+          {/* <span className="text-hero-accent text-xl">✦</span> */}
+          <span className="font-voyage text-xl font-bold text-hero-accent tracking-wide">
+            Future Dekho
           </span>
         </a>
         <a

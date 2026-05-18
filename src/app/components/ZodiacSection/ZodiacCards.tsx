@@ -113,12 +113,13 @@ export default function ZodiacCards({ signs, today }: ZodiacCardProps) {
 
       {/* ── Bottom CTA ── */}
       <div className="flex justify-center mt-14 sm:mt-16">
-        <button
+        <Link
+          href={"/chat"}
           type="button"
           className="rounded-full border border-white/15 bg-white/5 backdrop-blur-sm px-8 py-3.5 text-sm font-bold tracking-wide text-white font-kobe transition-all duration-300 hover:bg-white/10 hover:border-white/25 active:scale-95 cursor-pointer"
         >
           {t("zodiac.getDetailedReading")}
-        </button>
+        </Link>
       </div>
     </div>
   );
