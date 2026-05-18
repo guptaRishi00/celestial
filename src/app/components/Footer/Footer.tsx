@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useLanguage } from "@/lib/LanguageContext";
+import Link from "next/link";
 
 const footerLinks = {
   Support: [
@@ -127,9 +128,13 @@ export default function Footer() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="font-kobe text-xs text-white/25 tracking-wide">
+            <Link
+              target="0"
+              href="https://softexedge.in/"
+              className="font-kobe text-xs text-white/25 tracking-wide"
+            >
               Made by Softexedge
-            </p>
+            </Link>
           </div>
         </div>
       </div>
