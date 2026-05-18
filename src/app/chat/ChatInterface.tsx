@@ -1,10 +1,22 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import MessageBubble from "./MessageBubble";
-import LoginModal from "./LoginModal";
-import { PlusCircle, MessageSquare, Trash2, FileText } from "lucide-react";
+import {
+  Coins,
+  FileText,
+  MessageSquare,
+  PlusCircle,
+  Trash2,
+} from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
+import {
+  createPaymentOrder,
+  openRazorpayCheckout,
+  verifyRazorpayPayment,
+} from "@/lib/razorpay";
+import LoginModal from "./LoginModal";
+import MessageBubble from "./MessageBubble";
 
 interface Message {
   id: string;
@@ -18,12 +30,22 @@ interface ChatSession {
   updatedAt: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  chatTokens: number;
+  unlockedReports?: string[];
+}
+
+type StoredMessage = Partial<Message> & Pick<Message, "role" | "content">;
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
 
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -31,7 +53,11 @@ export default function ChatInterface() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [reportToast, setReportToast] = useState<{ message: string; type: "error" | "success" } | null>(null);
+  const [isRecharging, setIsRecharging] = useState(false);
+  const [reportToast, setReportToast] = useState<{
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
 
   const { t, lang } = useLanguage();
 
@@ -41,20 +67,28 @@ export default function ChatInterface() {
   // Optimistically add or update a chat session in the sidebar
   const upsertChatSession = (chatId: string, title: string) => {
     setChatSessions((prev) => {
-      const exists = prev.some(c => c._id === chatId);
+      const exists = prev.some((c) => c._id === chatId);
       if (exists) return prev;
-      return [{ _id: chatId, title, updatedAt: new Date().toISOString() }, ...prev];
+      return [
+        { _id: chatId, title, updatedAt: new Date().toISOString() },
+        ...prev,
+      ];
     });
   };
 
-  const fetchChatSessions = async () => {
+  const fetchChatSessions = useCallback(async () => {
     try {
       const res = await fetch("/api/chat/history");
       const data = await res.json();
       if (data.chats) {
         setChatSessions(data.chats);
       }
-    } catch (e) { }
+    } catch {}
+  }, []);
+
+  const updateChatTokens = (chatTokens: unknown) => {
+    if (typeof chatTokens !== "number") return;
+    setUser((prev) => (prev ? { ...prev, chatTokens } : prev));
   };
 
   // Check auth on mount
@@ -67,10 +101,11 @@ export default function ChatInterface() {
           fetchChatSessions();
         }
       })
-      .catch(() => { });
-  }, []);
+      .catch(() => {});
+  }, [fetchChatSessions]);
 
   // Auto-scroll to bottom
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Scroll whenever chat content or loading state changes.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
@@ -91,14 +126,16 @@ export default function ChatInterface() {
       const res = await fetch(`/api/chat/history?chatId=${chatId}`);
       const data = await res.json();
       if (data.messages) {
-        const messagesWithIds = data.messages.map((m: any, idx: number) => ({
-          ...m,
-          id: m.id || `msg-${idx}-${Date.now()}`
-        }));
+        const messagesWithIds = (data.messages as StoredMessage[]).map(
+          (m, idx) => ({
+            ...m,
+            id: m.id || `msg-${idx}-${Date.now()}`,
+          }),
+        );
         setMessages(messagesWithIds);
         setShowWelcome(messagesWithIds.length === 0);
       }
-    } catch (e) {
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -108,16 +145,25 @@ export default function ChatInterface() {
     e.stopPropagation();
     try {
       await fetch(`/api/chat/history?chatId=${chatId}`, { method: "DELETE" });
-      setChatSessions((prev) => prev.filter(c => c._id !== chatId));
+      setChatSessions((prev) => prev.filter((c) => c._id !== chatId));
       if (currentChatId === chatId) {
         startNewChat();
       }
-    } catch (e) { }
+    } catch {}
   };
 
   const sendMessage = async () => {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
+
+    if (user && user.chatTokens <= 0) {
+      setReportToast({
+        message: "Recharge tokens to continue your consultation.",
+        type: "error",
+      });
+      setTimeout(() => setReportToast(null), 5000);
+      return;
+    }
 
     setShowWelcome(false);
 
@@ -149,6 +195,24 @@ export default function ChatInterface() {
 
       const contentType = res.headers.get("content-type") || "";
 
+      if (res.status === 402) {
+        const data = await res.json().catch(() => null);
+        updateChatTokens(data?.chatTokens ?? 0);
+        setReportToast({
+          message: "Recharge tokens to continue your consultation.",
+          type: "error",
+        });
+        setTimeout(() => setReportToast(null), 5000);
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content:
+            "Your chat tokens are over. Please recharge to continue your consultation.",
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        return;
+      }
+
       // Server returned an error page (HTML) — bail out with a friendly message
       // instead of rendering Next.js's error markup into the chat bubble.
       if (!res.ok || contentType.includes("text/html")) {
@@ -158,6 +222,7 @@ export default function ChatInterface() {
       // Handle JSON responses (fallback, login required, errors)
       if (contentType.includes("application/json")) {
         const data = await res.json();
+        updateChatTokens(data.chatTokens);
 
         if (data.requiresLogin) {
           setShowLogin(true);
@@ -167,8 +232,11 @@ export default function ChatInterface() {
 
         if (data.chatId && currentChatId !== data.chatId) {
           setCurrentChatId(data.chatId);
-          const firstMsg = updatedMessages.find(m => m.role === "user");
-          const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : t("chat.newConsultation");
+          const firstMsg = updatedMessages.find((m) => m.role === "user");
+          const title = firstMsg
+            ? firstMsg.content.substring(0, 40) +
+              (firstMsg.content.length > 40 ? "..." : "")
+            : t("chat.newConsultation");
           upsertChatSession(data.chatId, title);
         }
 
@@ -191,7 +259,10 @@ export default function ChatInterface() {
         let isFirstChunk = true;
 
         // Add empty assistant message that we'll update
-        setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
+        setMessages((prev) => [
+          ...prev,
+          { id: assistantId, role: "assistant", content: "" },
+        ]);
         setIsLoading(false);
 
         while (true) {
@@ -208,15 +279,26 @@ export default function ChatInterface() {
                 const meta = JSON.parse(text.substring(0, newlineIdx));
                 if (meta.chatId && currentChatId !== meta.chatId) {
                   setCurrentChatId(meta.chatId);
-                  const firstMsg = updatedMessages.find(m => m.role === "user");
-                  const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : t("chat.newConsultation");
+                  const firstMsg = updatedMessages.find(
+                    (m) => m.role === "user",
+                  );
+                  const title = firstMsg
+                    ? firstMsg.content.substring(0, 40) +
+                      (firstMsg.content.length > 40 ? "..." : "")
+                    : t("chat.newConsultation");
                   upsertChatSession(meta.chatId, title);
                 }
-              } catch { }
+                updateChatTokens(meta.chatTokens);
+              } catch {}
               fullText += text.substring(newlineIdx + 1);
             } else {
               // Entire first chunk is metadata, skip
-              try { JSON.parse(text); } catch { fullText += text; }
+              try {
+                const meta = JSON.parse(text);
+                updateChatTokens(meta.chatTokens);
+              } catch {
+                fullText += text;
+              }
             }
             isFirstChunk = false;
           } else {
@@ -225,8 +307,8 @@ export default function ChatInterface() {
 
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId ? { ...m, content: fullText } : m
-            )
+              m.id === assistantId ? { ...m, content: fullText } : m,
+            ),
           );
         }
       }
@@ -250,43 +332,114 @@ export default function ChatInterface() {
     }
   };
 
+  const downloadReport = async (unlockId?: string | null) => {
+    const params = new URLSearchParams({ lang });
+    if (unlockId) params.set("unlockId", unlockId);
+
+    const res = await fetch(`/api/report?${params.toString()}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.error || t("chat.reportFailed"));
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const disposition = res.headers.get("Content-Disposition");
+    const match = disposition?.match(/filename="([^"]+)"/);
+    a.download = match?.[1] || "Kundali_Report.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const generateReport = async () => {
+    if (!user) {
+      setShowLogin(true);
+      setReportToast({ message: t("chat.reportSignIn"), type: "error" });
+      setTimeout(() => setReportToast(null), 5000);
+      return;
+    }
+
     setIsGeneratingReport(true);
     setReportToast(null);
     try {
-      const res = await fetch(`/api/report?lang=${lang}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const msg = data?.error || t("chat.reportFailed");
-        if (res.status === 401) {
-          setShowLogin(true);
-          setReportToast({ message: t("chat.reportSignIn"), type: "error" });
-        } else {
-          setReportToast({ message: msg, type: "error" });
-        }
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const disposition = res.headers.get("Content-Disposition");
-      const match = disposition?.match(/filename="([^"]+)"/);
-      a.download = match?.[1] || "Kundali_Report.pdf";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const order = await createPaymentOrder("report", 10);
+      const checkoutResponse = await openRazorpayCheckout({
+        order,
+        name: "Celestial AI",
+        description: "Detailed Astrology Report",
+      });
+      const verification = await verifyRazorpayPayment(
+        checkoutResponse,
+        "report",
+        user.id,
+      );
+
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              unlockedReports:
+                verification.unlockedReports || prev.unlockedReports,
+            }
+          : prev,
+      );
+      await downloadReport(verification.reportUnlockId);
       setReportToast({ message: t("chat.reportSuccess"), type: "success" });
-    } catch {
-      setReportToast({ message: t("chat.networkError"), type: "error" });
+    } catch (error) {
+      setReportToast({
+        message:
+          error instanceof Error ? error.message : t("chat.networkError"),
+        type: "error",
+      });
     } finally {
       setIsGeneratingReport(false);
       setTimeout(() => setReportToast(null), 5000);
     }
   };
 
-  const handleLoginSuccess = async (userData: { name: string; email: string }) => {
+  const handleRecharge = async () => {
+    if (!user) {
+      setShowLogin(true);
+      return;
+    }
+
+    setIsRecharging(true);
+    setReportToast(null);
+    try {
+      const order = await createPaymentOrder("tokens", 50);
+      const checkoutResponse = await openRazorpayCheckout({
+        order,
+        name: "Celestial AI",
+        description: "Chat Token Refill",
+      });
+      const verification = await verifyRazorpayPayment(
+        checkoutResponse,
+        "tokens",
+        user.id,
+      );
+
+      updateChatTokens(verification.chatTokens);
+      setReportToast({
+        message: "Tokens refilled successfully.",
+        type: "success",
+      });
+    } catch (error) {
+      setReportToast({
+        message:
+          error instanceof Error ? error.message : t("chat.networkError"),
+        type: "error",
+      });
+    } finally {
+      setIsRecharging(false);
+      setTimeout(() => setReportToast(null), 5000);
+    }
+  };
+
+  const handleLoginSuccess = async (userData: User) => {
     setUser(userData);
     setShowLogin(false);
     await fetchChatSessions();
@@ -314,8 +467,11 @@ export default function ChatInterface() {
       const data = await res.json();
       if (data.chatId) {
         setCurrentChatId(data.chatId);
-        const firstMsg = currentMessages.find(m => m.role === "user");
-        const title = firstMsg ? firstMsg.content.substring(0, 40) + (firstMsg.content.length > 40 ? "..." : "") : t("chat.newConsultation");
+        const firstMsg = currentMessages.find((m) => m.role === "user");
+        const title = firstMsg
+          ? firstMsg.content.substring(0, 40) +
+            (firstMsg.content.length > 40 ? "..." : "")
+          : t("chat.newConsultation");
         upsertChatSession(data.chatId, title);
       }
       if (data.reply) {
@@ -333,11 +489,18 @@ export default function ChatInterface() {
     }
   };
 
+  const hasNoTokens = Boolean(user && user.chatTokens <= 0);
+
   return (
     <div className="flex flex-1 h-full w-full relative overflow-hidden">
       {/* Sidebar overlay — shown when drawer is open below `lg` breakpoint */}
       {isSidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
+        <button
+          type="button"
+          aria-label="Close consultations menu"
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar
@@ -353,6 +516,7 @@ export default function ChatInterface() {
       >
         <div className="p-4">
           <button
+            type="button"
             onClick={startNewChat}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-hero-accent/10 border border-hero-accent/30 text-hero-accent px-4 py-3 hover:bg-hero-accent/20 transition-all font-kobe tracking-wide text-sm cursor-pointer shadow-[0_0_15px_rgba(196,161,255,0.1)]"
           >
@@ -362,7 +526,9 @@ export default function ChatInterface() {
         </div>
 
         <div className="px-4 pb-2">
-          <h3 className="text-[10px] text-white/30 uppercase tracking-widest font-kobe mb-1">{t("chat.previousSessions")}</h3>
+          <h3 className="text-[10px] text-white/30 uppercase tracking-widest font-kobe mb-1">
+            {t("chat.previousSessions")}
+          </h3>
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 pb-4 flex flex-col gap-1">
@@ -374,14 +540,27 @@ export default function ChatInterface() {
             chatSessions.map((chat) => (
               <div
                 key={chat._id}
-                onClick={() => loadChat(chat._id)}
-                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all group ${currentChatId === chat._id ? "bg-white/10" : "hover:bg-white/5"}`}
+                className={`flex items-center gap-2 p-1.5 rounded-xl transition-all group ${currentChatId === chat._id ? "bg-white/10" : "hover:bg-white/5"}`}
               >
-                <MessageSquare size={14} className={currentChatId === chat._id ? "text-hero-accent" : "text-white/40"} />
-                <div className="flex-1 truncate text-xs font-kobe text-white/80">
-                  {chat.title}
-                </div>
                 <button
+                  type="button"
+                  onClick={() => loadChat(chat._id)}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1.5 text-left"
+                >
+                  <MessageSquare
+                    size={14}
+                    className={
+                      currentChatId === chat._id
+                        ? "text-hero-accent"
+                        : "text-white/40"
+                    }
+                  />
+                  <span className="flex-1 truncate text-xs font-kobe text-white/80">
+                    {chat.title}
+                  </span>
+                </button>
+                <button
+                  type="button"
                   onClick={(e) => deleteChat(e, chat._id)}
                   className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
                   title={t("chat.deleteChat")}
@@ -396,8 +575,11 @@ export default function ChatInterface() {
         {!user && (
           <div className="p-4 border-t border-white/5">
             <div className="rounded-xl bg-white/5 p-4 text-center border border-white/10">
-              <p className="text-xs text-white/40 font-kobe mb-3">{t("chat.signInToSave")}</p>
+              <p className="text-xs text-white/40 font-kobe mb-3">
+                {t("chat.signInToSave")}
+              </p>
               <button
+                type="button"
                 onClick={() => setShowLogin(true)}
                 className="w-full rounded-lg bg-white/10 px-3 py-2 text-xs text-white font-kobe hover:bg-white/20 transition-colors"
               >
@@ -415,15 +597,30 @@ export default function ChatInterface() {
             absolutely positioned, so it can't overlap scrolling content. */}
         <div className="lg:hidden flex items-center gap-2 px-3 sm:px-4 py-2 border-b border-white/5 bg-black/30 backdrop-blur-md flex-shrink-0">
           <button
+            type="button"
             onClick={() => setIsSidebarOpen(true)}
             className="text-white/60 p-1.5 hover:text-white transition-colors cursor-pointer rounded-md hover:bg-white/5"
             aria-label="Open consultations menu"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            <svg
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+              />
             </svg>
           </button>
-          <span className="font-kobe text-xs sm:text-sm text-white/50 truncate">{t("chat.panditShastri")}</span>
+          <span className="font-kobe text-xs sm:text-sm text-white/50 truncate">
+            {t("chat.panditShastri")}
+          </span>
         </div>
 
         {/* Messages container */}
@@ -498,11 +695,13 @@ export default function ChatInterface() {
 
         {/* Report toast notification */}
         {reportToast && (
-          <div className={`absolute top-16 md:top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border backdrop-blur-xl text-sm font-kobe tracking-wide shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 ${
-            reportToast.type === "error"
-              ? "bg-red-500/10 border-red-500/20 text-red-400"
-              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-          }`}>
+          <div
+            className={`absolute top-16 md:top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border backdrop-blur-xl text-sm font-kobe tracking-wide shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-top-2 duration-300 ${
+              reportToast.type === "error"
+                ? "bg-red-500/10 border-red-500/20 text-red-400"
+                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+            }`}
+          >
             {reportToast.message}
           </div>
         )}
@@ -512,7 +711,9 @@ export default function ChatInterface() {
             - flex-shrink-0 so it never gets squeezed by the scroll area */}
         <div
           className="flex-shrink-0 border-t border-white/8 bg-black/30 backdrop-blur-xl px-3 sm:px-5 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4 relative z-10"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.625rem)" }}
+          style={{
+            paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.625rem)",
+          }}
         >
           <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex items-center gap-2 sm:gap-2.5 md:gap-3">
             <div className="flex-1 relative min-w-0">
@@ -541,9 +742,26 @@ export default function ChatInterface() {
               title="Generate Kundali Report (PDF)"
             >
               {isGeneratingReport ? (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-hero-warm" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                  <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <svg
+                  aria-hidden="true"
+                  className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-hero-warm"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
+                  <path
+                    className="opacity-90"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
               ) : (
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 group-hover:text-hero-warm transition-colors duration-300" />
@@ -553,10 +771,50 @@ export default function ChatInterface() {
                 {t("chat.generateReport")}
               </span>
             </button>
+            {hasNoTokens && (
+              <button
+                type="button"
+                onClick={handleRecharge}
+                disabled={isRecharging}
+                className="group relative flex items-center justify-center gap-1.5 h-10 sm:h-12 rounded-xl px-3 sm:px-4 transition-all duration-300 flex-shrink-0 border bg-hero-accent/10 border-hero-accent/30 text-hero-accent hover:bg-hero-accent/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                title="Recharge chat tokens"
+              >
+                {isRecharging ? (
+                  <svg
+                    aria-hidden="true"
+                    className="w-4 h-4 sm:w-5 sm:h-5 animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                ) : (
+                  <Coins className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
+                <span className="hidden sm:inline text-xs font-kobe tracking-wide">
+                  Recharge
+                </span>
+              </button>
+            )}
             <button
               type="button"
               onClick={sendMessage}
-              disabled={(!input.trim() && !isLoading) || isLoading}
+              disabled={
+                (!input.trim() && !isLoading) || isLoading || hasNoTokens
+              }
               className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-300 flex-shrink-0 ${
                 isLoading
                   ? "bg-hero-accent/40 cursor-not-allowed"
@@ -565,12 +823,30 @@ export default function ChatInterface() {
               id="send-button"
             >
               {isLoading ? (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                  <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <svg
+                  aria-hidden="true"
+                  className="w-4 h-4 sm:w-5 sm:h-5 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
+                  <path
+                    className="opacity-90"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
               ) : (
                 <svg
+                  aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 20 20"
                   fill="currentColor"
@@ -581,7 +857,11 @@ export default function ChatInterface() {
               )}
             </button>
           </div>
-          {!user && (
+          {user ? (
+            <p className="max-w-3xl xl:max-w-4xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/25 font-kobe tracking-wide text-center">
+              Tokens: {user.chatTokens}
+            </p>
+          ) : (
             <p className="max-w-3xl xl:max-w-4xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/20 font-kobe tracking-wide text-center">
               {t("chat.freeMessages")}
             </p>

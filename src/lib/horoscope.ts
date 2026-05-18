@@ -4,8 +4,18 @@ import { getDb } from "@/lib/mongodb";
 // ── Helpers ──────────────────────────────────────────────────────────
 
 const ALL_SIGNS = [
-  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+  "Aries",
+  "Taurus",
+  "Gemini",
+  "Cancer",
+  "Leo",
+  "Virgo",
+  "Libra",
+  "Scorpio",
+  "Sagittarius",
+  "Capricorn",
+  "Aquarius",
+  "Pisces",
 ] as const;
 
 /** Returns today's date string in IST (Asia/Kolkata) as "YYYY-MM-DD" */
@@ -20,16 +30,38 @@ function getOpenAIClient() {
     baseURL: "https://openrouter.ai/api/v1",
     apiKey: openRouterKey,
     defaultHeaders: {
-      "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+      "HTTP-Referer":
+        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
       "X-Title": "Celestial Astrology",
     },
   });
 }
 
+/** Robust JSON parser that strips conversational text around JSON content */
+function cleanAndParseJson<T>(content: string, type: "array" | "object"): T {
+  const startChar = type === "array" ? "[" : "{";
+  const endChar = type === "array" ? "]" : "}";
+
+  const startIdx = content.indexOf(startChar);
+  const endIdx = content.lastIndexOf(endChar);
+
+  let jsonStr = content;
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    jsonStr = content.substring(startIdx, endIdx + 1);
+  } else {
+    jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
+  }
+
+  return JSON.parse(jsonStr) as T;
+}
+
 // ── In-memory cache (avoids DB roundtrip on every request) ──────────
 
 let memCacheDaily: { date: string; data: DailyHoroscopeEntry[] } | null = null;
-const memCacheDetailed = new Map<string, { date: string; data: DetailedHoroscope }>();
+const memCacheDetailed = new Map<
+  string,
+  { date: string; data: DetailedHoroscope }
+>();
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -49,7 +81,9 @@ interface DetailedHoroscope {
 
 // ── AI Generation ───────────────────────────────────────────────────
 
-async function generateDailyHoroscopes(): Promise<DailyHoroscopeEntry[] | null> {
+async function generateDailyHoroscopes(): Promise<
+  DailyHoroscopeEntry[] | null
+> {
   const openai = getOpenAIClient();
   if (!openai) return null;
 
@@ -74,11 +108,13 @@ Do not include any markdown formatting blocks like \`\`\`json. Just return the r
   });
 
   const content = response.choices[0]?.message?.content || "[]";
-  const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
-  return JSON.parse(jsonStr) as DailyHoroscopeEntry[];
+  return cleanAndParseJson<DailyHoroscopeEntry[]>(content, "array");
 }
 
-async function generateAllDetailedHoroscopes(): Promise<Record<string, DetailedHoroscope> | null> {
+async function generateAllDetailedHoroscopes(): Promise<Record<
+  string,
+  DetailedHoroscope
+> | null> {
   const openai = getOpenAIClient();
   if (!openai) return null;
 
@@ -108,21 +144,19 @@ Do not include any markdown formatting blocks. Return ONLY the raw JSON object.`
   });
 
   const content = response.choices[0]?.message?.content || "{}";
-  const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
-  return JSON.parse(jsonStr) as Record<string, DetailedHoroscope>;
+  return cleanAndParseJson<Record<string, DetailedHoroscope>>(
+    content,
+    "object",
+  );
 }
 
 // ── Public API ──────────────────────────────────────────────────────
 
-/**
- * Get daily horoscopes for all 12 signs.
- * Priority: in-memory cache → MongoDB → AI generation.
- * Detailed horoscopes are generated in the background (non-blocking).
- */
-export async function getDailyHoroscopes(): Promise<DailyHoroscopeEntry[] | null> {
+export async function getDailyHoroscopes(): Promise<
+  DailyHoroscopeEntry[] | null
+> {
   const today = getTodayIST();
 
-  // 1. Check in-memory cache (fastest — no DB hit)
   if (memCacheDaily && memCacheDaily.date === today) {
     return memCacheDaily.data;
   }
@@ -131,7 +165,6 @@ export async function getDailyHoroscopes(): Promise<DailyHoroscopeEntry[] | null
     const db = await getDb();
     const dailyCol = db.collection("daily_horoscopes");
 
-    // 2. Check MongoDB
     const cached = await dailyCol.findOne({ date: today });
     if (cached && cached.horoscopes) {
       const data = cached.horoscopes as DailyHoroscopeEntry[];
@@ -139,21 +172,18 @@ export async function getDailyHoroscopes(): Promise<DailyHoroscopeEntry[] | null
       return data;
     }
 
-    // 3. First request of the day — generate daily summaries
     const horoscopes = await generateDailyHoroscopes();
     if (!horoscopes) return null;
 
-    // Save to DB + memory
     await dailyCol.updateOne(
       { date: today },
       { $set: { date: today, horoscopes, generatedAt: new Date() } },
-      { upsert: true }
+      { upsert: true },
     );
     memCacheDaily = { date: today, data: horoscopes };
 
-    // 4. Generate detailed horoscopes in the background (non-blocking)
     generateAndCacheAllDetailed(today).catch((e) =>
-      console.error("Background detailed horoscope generation failed:", e)
+      console.error("Background detailed horoscope generation failed:", e),
     );
 
     return horoscopes;
@@ -167,22 +197,16 @@ export async function getDailyHoroscopes(): Promise<DailyHoroscopeEntry[] | null
   }
 }
 
-/**
- * Pre-generates detailed horoscopes for all 12 signs and saves them to DB.
- * Called once per day in the background after daily horoscopes are generated.
- */
 async function generateAndCacheAllDetailed(today: string): Promise<void> {
   const db = await getDb();
   const detailCol = db.collection("detailed_horoscopes");
 
-  // Check if any detailed data already exists for today
   const existingCount = await detailCol.countDocuments({ date: today });
   if (existingCount >= 12) return;
 
   const allDetailed = await generateAllDetailedHoroscopes();
   if (!allDetailed) return;
 
-  // Bulk-write all 12 signs
   const ops = ALL_SIGNS.map((sign) => {
     const key = sign.toLowerCase();
     const data = allDetailed[key];
@@ -200,7 +224,6 @@ async function generateAndCacheAllDetailed(today: string): Promise<void> {
 
   if (ops.length > 0) {
     await detailCol.bulkWrite(ops as any[]);
-    // Populate memory cache
     for (const sign of ALL_SIGNS) {
       const key = sign.toLowerCase();
       if (allDetailed[key]) {
@@ -210,15 +233,12 @@ async function generateAndCacheAllDetailed(today: string): Promise<void> {
   }
 }
 
-/**
- * Get detailed horoscope for a specific sign.
- * Priority: in-memory cache → MongoDB → on-demand AI generation.
- */
-export async function getDetailedHoroscope(sign: string): Promise<DetailedHoroscope | null> {
+export async function getDetailedHoroscope(
+  sign: string,
+): Promise<DetailedHoroscope | null> {
   const today = getTodayIST();
   const normalizedSign = sign.toLowerCase();
 
-  // 1. Check in-memory cache
   const memEntry = memCacheDetailed.get(normalizedSign);
   if (memEntry && memEntry.date === today) {
     return memEntry.data;
@@ -228,15 +248,16 @@ export async function getDetailedHoroscope(sign: string): Promise<DetailedHorosc
     const db = await getDb();
     const collection = db.collection("detailed_horoscopes");
 
-    // 2. Check MongoDB
-    const cached = await collection.findOne({ date: today, sign: normalizedSign });
+    const cached = await collection.findOne({
+      date: today,
+      sign: normalizedSign,
+    });
     if (cached && cached.data) {
       const data = cached.data as DetailedHoroscope;
       memCacheDetailed.set(normalizedSign, { date: today, data });
       return data;
     }
 
-    // 3. Fallback: generate just this sign on-demand
     const openai = getOpenAIClient();
     if (!openai) return null;
 
@@ -259,14 +280,19 @@ Return ONLY the raw JSON object string without any markdown formatting.`;
     });
 
     const content = response.choices[0]?.message?.content || "{}";
-    const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
-    const data = JSON.parse(jsonStr) as DetailedHoroscope;
+    const data = cleanAndParseJson<DetailedHoroscope>(content, "object");
 
-    // Save to DB + memory
     await collection.updateOne(
       { date: today, sign: normalizedSign },
-      { $set: { date: today, sign: normalizedSign, data, generatedAt: new Date() } },
-      { upsert: true }
+      {
+        $set: {
+          date: today,
+          sign: normalizedSign,
+          data,
+          generatedAt: new Date(),
+        },
+      },
+      { upsert: true },
     );
     memCacheDetailed.set(normalizedSign, { date: today, data });
 

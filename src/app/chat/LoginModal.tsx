@@ -1,12 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
 
 interface LoginModalProps {
   onClose: () => void;
-  onSuccess: (user: { name: string; email: string }) => void;
+  onSuccess: (user: {
+    id: string;
+    name: string;
+    email: string;
+    chatTokens: number;
+    unlockedReports?: string[];
+  }) => void;
 }
 
 export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
@@ -59,12 +66,10 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
+      <button
+        type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-md animate-in fade-in duration-300"
         onClick={onClose}
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
-        role="button"
-        tabIndex={0}
         aria-label="Close modal"
       />
 
@@ -83,19 +88,24 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
               {isSignup ? t("login.joinTitle") : t("login.welcomeBack")}
             </h2>
             <p className="font-kobe text-sm text-white/40">
-              {isSignup
-                ? t("login.joinDesc")
-                : t("login.signInDesc")}
+              {isSignup ? t("login.joinDesc") : t("login.signInDesc")}
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 pb-8 pt-2 flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit}
+            className="px-8 pb-8 pt-2 flex flex-col gap-4"
+          >
             {isSignup && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="modal-name" className="text-xs text-white/40 font-kobe tracking-wide">
-                    {t("login.fullName")} <span className="text-hero-accent">*</span>
+                  <label
+                    htmlFor="modal-name"
+                    className="text-xs text-white/40 font-kobe tracking-wide"
+                  >
+                    {t("login.fullName")}{" "}
+                    <span className="text-hero-accent">*</span>
                   </label>
                   <input
                     id="modal-name"
@@ -120,7 +130,10 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
                   <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col gap-1.5">
-                        <label htmlFor="modal-dob" className="text-xs text-white/40 font-kobe tracking-wide">
+                        <label
+                          htmlFor="modal-dob"
+                          className="text-xs text-white/40 font-kobe tracking-wide"
+                        >
                           {t("login.dateOfBirth")}
                         </label>
                         <input
@@ -132,7 +145,10 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
                         />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <label htmlFor="modal-gender" className="text-xs text-white/40 font-kobe tracking-wide">
+                        <label
+                          htmlFor="modal-gender"
+                          className="text-xs text-white/40 font-kobe tracking-wide"
+                        >
                           {t("login.gender")}
                         </label>
                         <select
@@ -141,16 +157,27 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
                           onChange={(e) => setGender(e.target.value)}
                           className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white font-kobe outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.07] appearance-none cursor-pointer [color-scheme:dark]"
                         >
-                          <option value="" className="bg-[#1a1a1a]">{t("login.select")}</option>
-                          <option value="Male" className="bg-[#1a1a1a]">{t("login.male")}</option>
-                          <option value="Female" className="bg-[#1a1a1a]">{t("login.female")}</option>
-                          <option value="Other" className="bg-[#1a1a1a]">{t("login.other")}</option>
+                          <option value="" className="bg-[#1a1a1a]">
+                            {t("login.select")}
+                          </option>
+                          <option value="Male" className="bg-[#1a1a1a]">
+                            {t("login.male")}
+                          </option>
+                          <option value="Female" className="bg-[#1a1a1a]">
+                            {t("login.female")}
+                          </option>
+                          <option value="Other" className="bg-[#1a1a1a]">
+                            {t("login.other")}
+                          </option>
                         </select>
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="modal-birthtime" className="text-xs text-white/40 font-kobe tracking-wide">
+                      <label
+                        htmlFor="modal-birthtime"
+                        className="text-xs text-white/40 font-kobe tracking-wide"
+                      >
                         {t("login.birthTime")}
                       </label>
                       <input
@@ -163,7 +190,10 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="modal-birthplace" className="text-xs text-white/40 font-kobe tracking-wide">
+                      <label
+                        htmlFor="modal-birthplace"
+                        className="text-xs text-white/40 font-kobe tracking-wide"
+                      >
                         {t("login.birthPlace")}
                       </label>
                       <input
@@ -185,7 +215,10 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="modal-email" className="text-xs text-white/40 font-kobe tracking-wide">
+              <label
+                htmlFor="modal-email"
+                className="text-xs text-white/40 font-kobe tracking-wide"
+              >
                 {t("login.email")} <span className="text-hero-accent">*</span>
               </label>
               <input
@@ -200,8 +233,12 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="modal-password" className="text-xs text-white/40 font-kobe tracking-wide">
-                {t("login.password")} <span className="text-hero-accent">*</span>
+              <label
+                htmlFor="modal-password"
+                className="text-xs text-white/40 font-kobe tracking-wide"
+              >
+                {t("login.password")}{" "}
+                <span className="text-hero-accent">*</span>
               </label>
               <div className="relative">
                 <input
@@ -241,8 +278,8 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
               {loading
                 ? t("login.pleaseWait")
                 : isSignup
-                ? t("login.createAccount")
-                : t("login.signInBtn")}
+                  ? t("login.createAccount")
+                  : t("login.signInBtn")}
             </button>
 
             {/* Toggle */}

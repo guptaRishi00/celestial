@@ -1,5 +1,6 @@
+import { setAuthCookie, signToken, verifyPassword } from "@/lib/auth";
+import { ensureUserBillingFields, toPublicUser } from "@/lib/billing";
 import { getDb } from "@/lib/mongodb";
-import { verifyPassword, signToken, setAuthCookie } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
     if (!email || !password) {
       return Response.json(
         { error: "Email and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     if (!user) {
       return Response.json(
         { error: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     if (!isValid) {
       return Response.json(
         { error: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -39,16 +40,17 @@ export async function POST(request: Request) {
       email: user.email,
     });
     await setAuthCookie(token);
+    await ensureUserBillingFields(db, user._id);
 
     return Response.json({
       success: true,
-      user: { name: user.name, email: user.email },
+      user: toPublicUser(user),
     });
   } catch (error) {
     console.error("Login error:", error);
     return Response.json(
       { error: "Something went wrong. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

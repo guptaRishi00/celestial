@@ -1,18 +1,30 @@
-import { getDb } from "@/lib/mongodb";
-import { hashPassword, signToken, setAuthCookie } from "@/lib/auth";
+import type { ObjectId } from "mongodb";
 import { computeNatalChart } from "@/lib/astrology/chart";
-import { ObjectId } from "mongodb";
+import { hashPassword, setAuthCookie, signToken } from "@/lib/auth";
+import { DEFAULT_CHAT_TOKENS, toPublicUser } from "@/lib/billing";
+import { getDb } from "@/lib/mongodb";
 
-async function computeAndStoreChart(userId: ObjectId, dob: string, birthTime: string, birthPlace?: string | null) {
+async function computeAndStoreChart(
+  userId: ObjectId,
+  dob: string,
+  birthTime: string,
+  birthPlace?: string | null,
+) {
   if (!dob || !birthTime) return;
   try {
-    const chart = await computeNatalChart({ dob, birthTime, birthPlace: birthPlace || undefined });
+    const chart = await computeNatalChart({
+      dob,
+      birthTime,
+      birthPlace: birthPlace || undefined,
+    });
     if (!chart) return;
     const db = await getDb();
-    await db.collection("users").updateOne(
-      { _id: userId },
-      { $set: { natalChart: chart, natalChartComputedAt: new Date() } }
-    );
+    await db
+      .collection("users")
+      .updateOne(
+        { _id: userId },
+        { $set: { natalChart: chart, natalChartComputedAt: new Date() } },
+      );
   } catch (e) {
     console.error("Chart compute failed:", e);
   }
@@ -20,19 +32,20 @@ async function computeAndStoreChart(userId: ObjectId, dob: string, birthTime: st
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password, dob, birthTime, birthPlace, gender } = await request.json();
+    const { name, email, password, dob, birthTime, birthPlace, gender } =
+      await request.json();
 
     if (!name || !email || !password) {
       return Response.json(
         { error: "Name, email, and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (password.length < 6) {
       return Response.json(
         { error: "Password must be at least 6 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,11 +53,13 @@ export async function POST(request: Request) {
     const usersCollection = db.collection("users");
 
     // Check if user already exists
-    const existingUser = await usersCollection.findOne({ email: email.toLowerCase() });
+    const existingUser = await usersCollection.findOne({
+      email: email.toLowerCase(),
+    });
     if (existingUser) {
       return Response.json(
         { error: "An account with this email already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -58,6 +73,8 @@ export async function POST(request: Request) {
       birthTime: birthTime || null,
       birthPlace: birthPlace || null,
       gender: gender || null,
+      chatTokens: DEFAULT_CHAT_TOKENS,
+      unlockedReports: [],
       createdAt: new Date(),
     });
 
@@ -76,20 +93,28 @@ export async function POST(request: Request) {
 
     return Response.json({
       success: true,
-      user: {
+      user: toPublicUser({
+        _id: result.insertedId,
         name,
         email: email.toLowerCase(),
         dob: dob || null,
         birthTime: birthTime || null,
         birthPlace: birthPlace || null,
         gender: gender || null,
-      },
+        chatTokens: DEFAULT_CHAT_TOKENS,
+        unlockedReports: [],
+        createdAt: new Date(),
+      }),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Signup error:", error);
+    const details = error instanceof Error ? error.message : String(error);
     return Response.json(
-      { error: "Something went wrong. Please try again.", details: error.message || String(error) },
-      { status: 500 }
+      {
+        error: "Something went wrong. Please try again.",
+        details,
+      },
+      { status: 500 },
     );
   }
 }

@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
+import {
+  createPaymentOrder,
+  openRazorpayCheckout,
+  verifyRazorpayPayment,
+} from "@/lib/razorpay";
+
+interface HeaderUser {
+  id: string;
+  name: string;
+  email: string;
+  chatTokens: number;
+  unlockedReports?: string[];
+}
 
 export default function Header() {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<HeaderUser | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [reportToast, setReportToast] = useState<{
     message: string;
@@ -15,35 +26,71 @@ export default function Header() {
   } | null>(null);
   const { lang, setLang, t } = useLanguage();
 
+  const downloadReport = async (unlockId?: string | null) => {
+    const params = new URLSearchParams({ lang });
+    if (unlockId) params.set("unlockId", unlockId);
+
+    const res = await fetch(`/api/report?${params.toString()}`);
+    if (!res.ok) {
+      if (res.status === 401) {
+        window.location.href = "/login";
+        throw new Error(t("chat.reportSignIn"));
+      }
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.error || t("chat.reportFailed"));
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const disposition = res.headers.get("Content-Disposition");
+    const match = disposition?.match(/filename="([^"]+)"/);
+    a.download = match?.[1] || "Kundali_Report.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const generateReport = async () => {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
     setIsGeneratingReport(true);
     setReportToast(null);
     try {
-      const res = await fetch(`/api/report?lang=${lang}`);
-      if (!res.ok) {
-        if (res.status === 401) {
-          window.location.href = "/login";
-          return;
-        }
-        const data = await res.json().catch(() => null);
-        const msg = data?.error || t("chat.reportFailed");
-        setReportToast({ message: msg, type: "error" });
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const disposition = res.headers.get("Content-Disposition");
-      const match = disposition?.match(/filename="([^"]+)"/);
-      a.download = match?.[1] || "Kundali_Report.pdf";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const order = await createPaymentOrder("report", 10);
+      const checkoutResponse = await openRazorpayCheckout({
+        order,
+        name: "Celestial AI",
+        description: "Detailed Astrology Report",
+      });
+      const verification = await verifyRazorpayPayment(
+        checkoutResponse,
+        "report",
+        user.id,
+      );
+
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              unlockedReports:
+                verification.unlockedReports || prev.unlockedReports,
+            }
+          : prev,
+      );
+      await downloadReport(verification.reportUnlockId);
       setReportToast({ message: t("chat.reportSuccess"), type: "success" });
-    } catch {
-      setReportToast({ message: t("chat.networkError"), type: "error" });
+    } catch (error) {
+      setReportToast({
+        message:
+          error instanceof Error ? error.message : t("chat.networkError"),
+        type: "error",
+      });
     } finally {
       setIsGeneratingReport(false);
       setTimeout(() => setReportToast(null), 5000);
@@ -90,6 +137,7 @@ export default function Header() {
           >
             {isGeneratingReport ? (
               <svg
+                aria-hidden="true"
                 className="w-4 h-4 animate-spin"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -111,6 +159,7 @@ export default function Header() {
               </svg>
             ) : (
               <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -132,6 +181,7 @@ export default function Header() {
             className="flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/10 px-3.5 py-2 text-sm text-white/70 font-kobe tracking-wide transition-all duration-200 hover:bg-white/10 hover:text-white"
           >
             <svg
+              aria-hidden="true"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -247,6 +297,7 @@ export default function Header() {
           >
             {isGeneratingReport ? (
               <svg
+                aria-hidden="true"
                 className="w-4 h-4 animate-spin"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -268,6 +319,7 @@ export default function Header() {
               </svg>
             ) : (
               <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -289,6 +341,7 @@ export default function Header() {
             className="flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white/70 font-kobe tracking-wide transition-all duration-200 hover:bg-white/10 hover:text-white"
           >
             <svg
+              aria-hidden="true"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
