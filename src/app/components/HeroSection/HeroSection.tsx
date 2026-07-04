@@ -17,7 +17,8 @@ export default function HeroSection() {
         alt="Celestial night sky with zodiac symbols"
         fill
         priority
-        quality={90}
+        quality={75}
+        sizes="100vw"
         className="object-cover object-center"
       />
 
@@ -88,8 +89,8 @@ export default function HeroSection() {
         {/* ── Right: Image Composition ── */}
         <div className="flex items-center justify-center lg:justify-end">
           <div className="relative w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] lg:w-[520px] lg:h-[520px]">
-            {/* Pulsing glow ring */}
-            <div className="absolute inset-[-12%] rounded-full bg-linear-to-br  blur-3xl" />
+            {/* Ambient accent glow behind the wheel */}
+            <div className="absolute inset-[-12%] rounded-full bg-radial from-hero-accent/20 via-hero-cool/10 to-transparent blur-3xl" />
 
             {/* Zodiac Wheel — slow continuous spin */}
             <Image
@@ -97,8 +98,9 @@ export default function HeroSection() {
               alt="Zodiac wheel chart"
               width={520}
               height={520}
-              quality={100}
-              className="absolute inset-0 w-full h-full object-contain animate-spin-slow"
+              quality={75}
+              sizes="(min-width: 1024px) 520px, (min-width: 640px) 420px, 340px"
+              className="absolute inset-0 w-full h-full object-contain animate-spin-slow motion-reduce:animate-none"
             />
 
             {/* Taurus layered on top — gentle float */}
@@ -108,6 +110,7 @@ export default function HeroSection() {
               width={340}
               height={380}
               quality={90}
+              sizes="(min-width: 1024px) 322px, (min-width: 640px) 260px, 210px"
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[62%] h-auto object-contain"
             />
           </div>
