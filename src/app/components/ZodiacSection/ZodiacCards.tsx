@@ -72,6 +72,7 @@ export default function ZodiacCards({ signs, today }: ZodiacCardProps) {
                   width={96}
                   height={96}
                   quality={90}
+                  sizes="(min-width: 640px) 96px, 80px"
                   className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(196,161,255,0.15)]"
                 />
               </div>
