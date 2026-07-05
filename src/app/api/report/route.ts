@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import React from "react";
 import { AstrologyReport } from "@/components/Report/AstrologyReport";
 import { calculateSarvashtakvarga } from "@/lib/astrology/ashtakvarga";
-import { computeNatalChart } from "@/lib/astrology/chart";
+import { CHART_VERSION, computeNatalChart } from "@/lib/astrology/chart";
 import { computeDivisionalCharts } from "@/lib/astrology/divisional";
 import { getGemstoneRecommendations } from "@/lib/astrology/gemstones";
 import { generateAIInterpretations } from "@/lib/astrology/interpretations";
@@ -27,7 +27,9 @@ async function getOrComputeChart(
   userId: ObjectId,
   dbUser: ReportDbUser,
 ): Promise<NatalChart | null> {
-  if (dbUser.natalChart?.version) return dbUser.natalChart;
+  // Compare against the current CHART_VERSION, not just truthiness — otherwise a
+  // stale cached chart from an older computation (e.g. pre-bugfix) is served forever.
+  if (dbUser.natalChart?.version === CHART_VERSION) return dbUser.natalChart;
   if (!dbUser.dob || !dbUser.birthTime) return null;
   const chart = await computeNatalChart({
     dob: dbUser.dob,

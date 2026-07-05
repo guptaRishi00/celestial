@@ -35,37 +35,37 @@ export interface AvakahadaChakra {
 
 export interface PlanetPosition {
   name: PlanetName;
-  sign: number;          // 1..12
+  sign: number; // 1..12
   signName: string;
-  house: number;         // 1..12
-  degreeInSign: number;  // 0..29.999
-  longitude: number;     // 0..359.999 (absolute ecliptic)
+  house: number; // 1..12
+  degreeInSign: number; // 0..29.999
+  longitude: number; // 0..359.999 (absolute ecliptic)
   nakshatraIndex: number; // 0..26
   nakshatraName: string;
   nakshatraPada: 1 | 2 | 3 | 4;
   nakshatraLord: PlanetName;
   retrograde: boolean;
-  bhavaHouse?: number;   // 1..12  Placidus (Bhava Chalit) house — only set when cusps are available
+  bhavaHouse?: number; // 1..12  Placidus (Bhava Chalit) house — only set when cusps are available
 }
 
 export interface RawChartInput {
-  dob: string;            // YYYY-MM-DD
-  birthTime: string;      // HH:MM
+  dob: string; // YYYY-MM-DD
+  birthTime: string; // HH:MM
   birthPlace?: string;
   latitude?: number;
   longitude?: number;
-  timezone?: number;      // hours offset, e.g. 5.5
-  ayanamsha?: AyanamshaKey;   // default: "lahiri"
-  houseSystem?: HouseSystem;  // default: "whole_sign"
+  timezone?: number; // hours offset, e.g. 5.5
+  ayanamsha?: AyanamshaKey; // default: "lahiri"
+  houseSystem?: HouseSystem; // default: "whole_sign"
 }
 
 export interface DashaPeriod {
   lord: PlanetName;
-  startDate: string;      // ISO date
+  startDate: string; // ISO date
   endDate: string;
   years: number;
-  level: 1 | 2 | 3;       // 1=Maha, 2=Antar, 3=Pratyantar
-  parent?: PlanetName;    // for antar/pratyantar
+  level: 1 | 2 | 3; // 1=Maha, 2=Antar, 3=Pratyantar
+  parent?: PlanetName; // for antar/pratyantar
 }
 
 export interface DashaTimeline {
@@ -74,7 +74,7 @@ export interface DashaTimeline {
     antar: DashaPeriod;
     pratyantar?: DashaPeriod;
   };
-  upcomingMaha: DashaPeriod[];   // next 2-3 mahadashas
+  upcomingMaha: DashaPeriod[]; // next 2-3 mahadashas
   birthDasha: PlanetName;
 }
 
@@ -84,6 +84,7 @@ export interface YogaResult {
   description: string;
   involves: PlanetName[];
   strength: "strong" | "moderate" | "weak";
+  citation?: string; // classical source reference, when available (see classical-grounding.ts)
 }
 
 export interface DoshaResult {
@@ -97,7 +98,7 @@ export interface DoshaResult {
 export interface AspectInfo {
   from: PlanetName;
   toHouse: number;
-  toPlanets: PlanetName[];   // planets sitting in that aspected house
+  toPlanets: PlanetName[]; // planets sitting in that aspected house
   type: "7th" | "special";
 }
 
@@ -105,7 +106,11 @@ export interface TransitInfo {
   date: string;
   planets: PlanetPosition[];
   notable: {
-    sadeSati?: { phase: "rising" | "peak" | "setting"; description: string } | null;
+    sadeSati?: {
+      phase: "rising" | "peak" | "setting";
+      description: string;
+      bindus?: number;
+    } | null;
     saturnReturn?: boolean;
     jupiterTransitHouse?: number;
     rahuKetuTransit?: { rahuHouse: number; ketuHouse: number };
@@ -123,7 +128,7 @@ export interface NatalChart {
   sunSign: number;
   planets: PlanetPosition[];
   houseLords: Record<number, PlanetName>;
-  bhavaCusps?: number[];  // 12 sidereal longitudes (Placidus cusp boundaries)
+  bhavaCusps?: number[]; // 12 sidereal longitudes (Placidus cusp boundaries)
   dashas: DashaTimeline;
   yogas: YogaResult[];
   doshas: DoshaResult[];
@@ -134,11 +139,12 @@ export interface NatalChart {
 
 export interface ChartDigest {
   // Compact human-readable digest fed into LLM prompts
-  identity: string;       // "Mesha lagna with Moon in Vrishabha (Rohini nakshatra)..."
-  planets: string[];      // one-line per planet
+  identity: string; // "Mesha lagna with Moon in Vrishabha (Rohini nakshatra)..."
+  planets: string[]; // one-line per planet
   houseSummary: string[]; // one-line per house with lord + occupants
   yogas: string[];
   doshas: string[];
   currentDasha: string;
   notableTransits: string[];
+  classicalGrounding: string[]; // verbatim-cited excerpts from BPHS/Saravali relevant to this chart
 }

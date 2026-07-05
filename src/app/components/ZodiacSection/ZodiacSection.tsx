@@ -143,8 +143,8 @@ export default async function ZodiacSection() {
         src="/bg2.png"
         alt="Starry background for zodiac section"
         fill
-        priority
-        quality={90}
+        quality={75}
+        sizes="100vw"
         className="object-cover object-center"
       />
 

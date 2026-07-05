@@ -17,6 +17,13 @@ import {
 } from "@/lib/razorpay";
 import LoginModal from "./LoginModal";
 import MessageBubble from "./MessageBubble";
+import PanditAvatar from "./PanditAvatar";
+import {
+  KundaliIcon,
+  SuryaIcon,
+  UnionIcon,
+  ZodiacWheelIcon,
+} from "./StarterIcons";
 
 interface Message {
   id: string;
@@ -62,7 +69,18 @@ export default function ChatInterface() {
   const { t, lang } = useLanguage();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow the composer textarea up to a max height (modern AI-chat feel)
+  const autoGrowInput = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  };
+  const resetInputHeight = () => {
+    if (inputRef.current) inputRef.current.style.height = "auto";
+  };
 
   const upsertChatSession = (chatId: string, title: string) => {
     setChatSessions((prev) => {
@@ -173,6 +191,7 @@ export default function ChatInterface() {
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
+    resetInputHeight();
     setIsLoading(true);
 
     try {
@@ -607,38 +626,47 @@ export default function ChatInterface() {
         <div className="flex-1 overflow-y-auto px-3 sm:px-5 md:px-6 lg:px-8 py-3 sm:py-5 md:py-6">
           <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex flex-col gap-2.5 sm:gap-3.5 md:gap-4">
             {showWelcome && messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-8 sm:py-24 text-center px-2">
-                <div className="relative mb-4 sm:mb-6">
-                  <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border-2 border-hero-accent/40 flex items-center justify-center text-2xl sm:text-4xl shadow-[0_0_40px_rgba(196,161,255,0.2)]">
-                    🙏
-                  </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-emerald-400 border-2 border-black" />
+              <div className="flex min-h-[70vh] flex-col items-center justify-center text-center px-2">
+                <div className="relative mb-4 sm:mb-5">
+                  <PanditAvatar
+                    className="w-[72px] h-[72px] sm:w-24 sm:h-24 ring-2 !ring-hero-accent/40 shadow-[0_0_44px_rgba(196,161,255,0.22)]"
+                    imgPx={190}
+                  />
+                  <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-400 ring-2 ring-black" />
                 </div>
 
-                <h2 className="font-voyage text-xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">
+                <h2 className="font-voyage text-2xl sm:text-3xl font-bold text-white mb-1.5 sm:mb-2">
                   {t("chat.panditShastri")}
                 </h2>
-                <p className="font-kobe text-xs sm:text-base text-white/40 max-w-md mb-5 sm:mb-8 leading-relaxed px-2">
+                <p className="font-kobe text-[13px] sm:text-base text-white/45 max-w-sm sm:max-w-md mb-6 sm:mb-8 leading-relaxed">
                   {t("chat.welcomeDesc")}
                 </p>
 
-                <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 max-w-lg">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full max-w-sm sm:max-w-md">
                   {[
-                    t("chat.suggestion1"),
-                    t("chat.suggestion2"),
-                    t("chat.suggestion3"),
-                    t("chat.suggestion4"),
-                  ].map((suggestion) => (
+                    { text: t("chat.suggestion1"), Icon: KundaliIcon },
+                    { text: t("chat.suggestion2"), Icon: SuryaIcon },
+                    { text: t("chat.suggestion3"), Icon: UnionIcon },
+                    { text: t("chat.suggestion4"), Icon: ZodiacWheelIcon },
+                  ].map(({ text, Icon }) => (
                     <button
-                      key={suggestion}
+                      key={text}
                       type="button"
                       onClick={() => {
-                        setInput(suggestion);
-                        inputRef.current?.focus();
+                        setInput(text);
+                        requestAnimationFrame(() => {
+                          inputRef.current?.focus();
+                          autoGrowInput();
+                        });
                       }}
-                      className="rounded-full border border-white/10 bg-white/5 backdrop-blur-sm px-3 py-1.5 sm:px-4 sm:py-2 text-[11px] sm:text-sm text-white/60 font-kobe tracking-wide transition-all duration-300 hover:bg-white/10 hover:text-white hover:border-hero-accent/30 hover:shadow-[0_0_15px_rgba(196,161,255,0.1)] cursor-pointer"
+                      className="group flex flex-col items-start gap-2.5 rounded-2xl border border-white/10 bg-white/[0.035] backdrop-blur-sm p-3.5 sm:p-4 text-left transition-all duration-300 hover:bg-white/[0.07] hover:border-hero-accent/30 hover:-translate-y-0.5 hover:shadow-[0_6px_24px_-6px_rgba(196,161,255,0.18)] cursor-pointer"
                     >
-                      {suggestion}
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-hero-accent/10 text-hero-accent ring-1 ring-inset ring-hero-accent/15 transition-colors duration-300 group-hover:bg-hero-accent/[0.18]">
+                        <Icon className="w-[18px] h-[18px]" />
+                      </span>
+                      <span className="font-kobe text-[13px] leading-snug tracking-wide text-white/70 transition-colors duration-300 group-hover:text-white">
+                        {text}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -650,15 +678,25 @@ export default function ChatInterface() {
             ))}
 
             {isLoading && (
-              <div className="flex items-start gap-2 sm:gap-3 max-w-[90%] sm:max-w-[85%]">
-                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-hero-accent/30 to-hero-warm/30 border border-hero-accent/30 flex items-center justify-center text-sm sm:text-base flex-shrink-0">
-                  🙏
-                </div>
-                <div className="rounded-2xl rounded-tl-sm bg-white/[0.06] border border-white/8 backdrop-blur-sm px-3.5 py-2.5 sm:px-5 sm:py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-hero-accent/60 animate-bounce [animation-delay:300ms]" />
+              <div className="flex items-start gap-2.5 sm:gap-3">
+                <PanditAvatar
+                  className="mt-0.5 w-8 h-8 sm:w-9 sm:h-9"
+                  imgPx={72}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <span className="font-voyage text-sm text-white/85 tracking-wide">
+                      {t("chat.panditShastri")}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                  </div>
+                  <div className="flex items-center gap-1.5 py-1.5">
+                    <span className="w-2 h-2 rounded-full bg-hero-accent/70 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-2 h-2 rounded-full bg-hero-accent/70 animate-bounce [animation-delay:150ms]" />
+                    <span className="w-2 h-2 rounded-full bg-hero-accent/70 animate-bounce [animation-delay:300ms]" />
+                    <span className="ml-1.5 text-xs text-white/35 font-kobe italic">
+                      {t("chat.panditJiOnline")}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -681,161 +719,184 @@ export default function ChatInterface() {
         )}
 
         <div
-          className="flex-shrink-0 border-t border-white/8 bg-black/30 backdrop-blur-xl px-3 sm:px-5 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4 relative z-10"
+          className="flex-shrink-0 border-t border-white/8 bg-black/30 backdrop-blur-xl px-3 sm:px-5 md:px-6 lg:px-8 pt-2.5 sm:pt-3 relative z-10"
           style={{
             paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.625rem)",
           }}
         >
-          <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex items-center gap-2 sm:gap-2.5 md:gap-3">
-            <div className="flex-1 relative min-w-0">
-              <input
+          <div className="max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto">
+            {/* Unified composer — textarea + inline actions (modern AI-chat pattern) */}
+            <div className="rounded-[26px] border border-white/12 bg-white/[0.05] backdrop-blur-xl transition-all duration-300 focus-within:border-hero-accent/40 focus-within:bg-white/[0.07] focus-within:shadow-[0_0_28px_rgba(196,161,255,0.1)]">
+              <textarea
                 ref={inputRef}
-                type="text"
+                rows={1}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  autoGrowInput();
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder={t("chat.inputPlaceholder")}
                 disabled={isLoading}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm px-3.5 py-2.5 sm:px-4 sm:py-3 md:px-5 md:py-3.5 text-sm text-white font-kobe placeholder:text-white/25 outline-none transition-all duration-300 focus:border-hero-accent/40 focus:bg-white/[0.08] focus:shadow-[0_0_20px_rgba(196,161,255,0.08)] disabled:opacity-50"
+                className="w-full resize-none bg-transparent px-4 sm:px-5 pt-3.5 pb-1.5 max-h-40 text-[15px] leading-relaxed text-white font-kobe placeholder:text-white/25 outline-none disabled:opacity-50"
                 id="chat-input"
               />
-            </div>
-            <button
-              type="button"
-              onClick={generateReport}
-              disabled={isGeneratingReport}
-              className={`group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-300 flex-shrink-0 border ${
-                isGeneratingReport
-                  ? "bg-hero-warm/20 border-hero-warm/30 cursor-not-allowed"
-                  : "bg-white/[0.04] border-white/10 hover:bg-hero-warm/15 hover:border-hero-warm/40 hover:scale-105 hover:shadow-[0_0_20px_rgba(255,169,142,0.2)] active:scale-95 cursor-pointer"
-              }`}
-              id="generate-report-button"
-              title="Generate Kundali Report (PDF)"
-            >
-              {isGeneratingReport ? (
-                <svg
-                  aria-hidden="true"
-                  className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-hero-warm"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  />
-                  <path
-                    className="opacity-90"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-              ) : (
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 group-hover:text-hero-warm transition-colors duration-300" />
-              )}
-              <span className="absolute -top-9 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#1a1a1a] border border-white/10 text-[10px] text-white/70 font-kobe tracking-wide whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg">
-                {t("chat.generateReport")}
-              </span>
-            </button>
-            {hasNoTokens && (
-              <button
-                type="button"
-                onClick={handleRecharge}
-                disabled={isRecharging}
-                className="group relative flex items-center justify-center gap-1.5 h-10 sm:h-12 rounded-xl px-3 sm:px-4 transition-all duration-300 flex-shrink-0 border bg-hero-accent/10 border-hero-accent/30 text-hero-accent hover:bg-hero-accent/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                title="Recharge chat tokens"
-              >
-                {isRecharging ? (
-                  <svg
-                    aria-hidden="true"
-                    className="w-4 h-4 sm:w-5 sm:h-5 animate-spin"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
+
+              {/* Action bar */}
+              <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-0.5">
+                <div className="flex items-center gap-1.5">
+                  {/* Generate Kundali report */}
+                  <button
+                    type="button"
+                    onClick={generateReport}
+                    disabled={isGeneratingReport}
+                    className={`group inline-flex items-center gap-1.5 h-9 rounded-full border px-2.5 sm:px-3 font-kobe text-xs tracking-wide transition-all duration-300 ${
+                      isGeneratingReport
+                        ? "bg-hero-warm/15 border-hero-warm/30 text-hero-warm cursor-not-allowed"
+                        : "bg-white/[0.04] border-white/10 text-white/55 hover:bg-hero-warm/10 hover:border-hero-warm/40 hover:text-hero-warm active:scale-95 cursor-pointer"
+                    }`}
+                    id="generate-report-button"
+                    title="Generate Kundali Report (PDF)"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    />
-                    <path
-                      className="opacity-90"
+                    {isGeneratingReport ? (
+                      <svg
+                        aria-hidden="true"
+                        className="w-4 h-4 animate-spin"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        />
+                        <path
+                          className="opacity-90"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                    ) : (
+                      <FileText className="w-4 h-4" />
+                    )}
+                    <span className="hidden sm:inline">
+                      {t("chat.generateReport")}
+                    </span>
+                  </button>
+
+                  {/* Recharge (only when out of tokens) */}
+                  {hasNoTokens && (
+                    <button
+                      type="button"
+                      onClick={handleRecharge}
+                      disabled={isRecharging}
+                      className="group inline-flex items-center gap-1.5 h-9 rounded-full border border-hero-accent/30 bg-hero-accent/10 px-2.5 sm:px-3 font-kobe text-xs tracking-wide text-hero-accent transition-all duration-300 hover:bg-hero-accent/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      title="Recharge chat tokens"
+                    >
+                      {isRecharging ? (
+                        <svg
+                          aria-hidden="true"
+                          className="w-4 h-4 animate-spin"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                          />
+                          <path
+                            className="opacity-90"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                      ) : (
+                        <Coins className="w-4 h-4" />
+                      )}
+                      <span>Recharge</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Send */}
+                <button
+                  type="button"
+                  onClick={sendMessage}
+                  disabled={
+                    (!input.trim() && !isLoading) || isLoading || hasNoTokens
+                  }
+                  className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-300 flex-shrink-0 ${
+                    isLoading
+                      ? "bg-hero-accent/40 cursor-not-allowed"
+                      : "bg-hero-accent hover:scale-105 hover:shadow-[0_0_20px_rgba(196,161,255,0.4)] active:scale-95 cursor-pointer"
+                  } text-inverse-surface disabled:opacity-30 disabled:hover:scale-100 disabled:hover:shadow-none`}
+                  id="send-button"
+                  aria-label="Send message"
+                >
+                  {isLoading ? (
+                    <svg
+                      aria-hidden="true"
+                      className="w-4 h-4 sm:w-5 sm:h-5 animate-spin"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
                       fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                ) : (
-                  <Coins className="w-4 h-4 sm:w-5 sm:h-5" />
-                )}
-                <span className="hidden sm:inline text-xs font-kobe tracking-wide">
-                  Recharge
+                      className="w-4 h-4 sm:w-5 sm:h-5"
+                    >
+                      <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.897 28.897 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Footer: token balance / free-messages hint */}
+            <div className="mt-1.5 flex items-center justify-center">
+              {user ? (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-kobe tracking-wide text-white/40">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${hasNoTokens ? "bg-red-400" : "bg-hero-accent"}`}
+                  />
+                  <span className={hasNoTokens ? "text-red-400" : ""}>
+                    {user.chatTokens} tokens
+                  </span>
                 </span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={sendMessage}
-              disabled={
-                (!input.trim() && !isLoading) || isLoading || hasNoTokens
-              }
-              className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-300 flex-shrink-0 ${
-                isLoading
-                  ? "bg-hero-accent/40 cursor-not-allowed"
-                  : "bg-hero-accent hover:scale-105 hover:shadow-[0_0_20px_rgba(196,161,255,0.4)] active:scale-95 cursor-pointer"
-              } text-inverse-surface disabled:opacity-30 disabled:hover:scale-100 disabled:hover:shadow-none`}
-              id="send-button"
-            >
-              {isLoading ? (
-                <svg
-                  aria-hidden="true"
-                  className="w-4 h-4 sm:w-5 sm:h-5 animate-spin"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  />
-                  <path
-                    className="opacity-90"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
               ) : (
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                >
-                  <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.897 28.897 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
-                </svg>
+                <span className="text-[11px] text-white/25 font-kobe tracking-wide">
+                  {t("chat.freeMessages")}
+                </span>
               )}
-            </button>
+            </div>
           </div>
-          {user ? (
-            <p className="max-w-3xl xl:max-w-4xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] lg:text-md text-hero-accent font-bold font-kobe tracking-wide text-center">
-              Tokens: {user.chatTokens}
-            </p>
-          ) : (
-            <p className="max-w-3xl xl:max-w-4xl mx-auto mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] text-white/20 font-kobe tracking-wide text-center">
-              {t("chat.freeMessages")}
-            </p>
-          )}
         </div>
       </section>
 

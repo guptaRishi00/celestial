@@ -1,9 +1,18 @@
-import { getOpenRouterClient, MODELS } from "./client";
+import { chatComplete, isAIConfigured } from "./client";
 
 export type Topic =
-  | "career" | "marriage" | "health" | "wealth" | "education"
-  | "family" | "children" | "travel" | "spirituality" | "property"
-  | "litigation" | "general";
+  | "career"
+  | "marriage"
+  | "health"
+  | "wealth"
+  | "education"
+  | "family"
+  | "children"
+  | "travel"
+  | "spirituality"
+  | "property"
+  | "litigation"
+  | "general";
 
 export interface IntentResult {
   topic: Topic;
@@ -11,18 +20,27 @@ export interface IntentResult {
   timeframe: "past" | "current" | "near_future" | "long_term" | "unspecified";
   isFollowUp: boolean;
   isBirthDetailsRequest: boolean;
-  isMetaQuestion: boolean;   // user asking about AI/the system itself
+  isMetaQuestion: boolean; // user asking about AI/the system itself
 }
 
 const VALID_TOPICS: Topic[] = [
-  "career","marriage","health","wealth","education",
-  "family","children","travel","spirituality","property",
-  "litigation","general",
+  "career",
+  "marriage",
+  "health",
+  "wealth",
+  "education",
+  "family",
+  "children",
+  "travel",
+  "spirituality",
+  "property",
+  "litigation",
+  "general",
 ];
 
 const SYSTEM_PROMPT = `You are an intent classifier for an astrology chat. Given a user message and recent context, output ONE compact JSON object:
 {
-  "topic": one of ${VALID_TOPICS.map(t => `"${t}"`).join(", ")},
+  "topic": one of ${VALID_TOPICS.map((t) => `"${t}"`).join(", ")},
   "subTopic": short phrase or null (e.g. "promotion", "job change", "second marriage"),
   "timeframe": "past"|"current"|"near_future"|"long_term"|"unspecified",
   "isFollowUp": true if the user is following up on a previous response in the same thread,
@@ -35,7 +53,10 @@ function fallbackIntent(message: string): IntentResult {
   const m = message.toLowerCase();
   const map: [RegExp, Topic][] = [
     [/career|job|kaam|work|business|promotion|salary|naukri/, "career"],
-    [/marriage|wife|husband|shaadi|love|relationship|partner|rishta|divorce/, "marriage"],
+    [
+      /marriage|wife|husband|shaadi|love|relationship|partner|rishta|divorce/,
+      "marriage",
+    ],
     [/health|bimari|illness|disease|body|tabiyat/, "health"],
     [/wealth|money|paisa|finance|rich|loan|debt|invest/, "wealth"],
     [/child|baccha|santaan|pregnancy|bachhe/, "children"],
@@ -48,46 +69,65 @@ function fallbackIntent(message: string): IntentResult {
   ];
   let topic: Topic = "general";
   for (const [re, t] of map) {
-    if (re.test(m)) { topic = t; break; }
+    if (re.test(m)) {
+      topic = t;
+      break;
+    }
   }
   return {
     topic,
     subTopic: null,
     timeframe: "unspecified",
     isFollowUp: false,
-    isBirthDetailsRequest: /\b(dob|birth|janam|date of birth|jagah|time)\b/.test(m),
-    isMetaQuestion: /\b(are you ai|chatbot|gpt|claude|robot|computer|real person)\b/.test(m),
+    isBirthDetailsRequest:
+      /\b(dob|birth|janam|date of birth|jagah|time)\b/.test(m),
+    isMetaQuestion:
+      /\b(are you ai|chatbot|gpt|claude|robot|computer|real person)\b/.test(m),
   };
 }
 
 export async function classifyIntent(
   message: string,
-  recentMessages: { role: string; content: string }[] = []
+  recentMessages: { role: string; content: string }[] = [],
 ): Promise<IntentResult> {
-  const client = getOpenRouterClient();
-  if (!client) return fallbackIntent(message);
+  if (!isAIConfigured()) return fallbackIntent(message);
 
-  const recent = recentMessages.slice(-4).map(m => `${m.role}: ${m.content}`).join("\n");
+  const recent = recentMessages
+    .slice(-4)
+    .map((m) => `${m.role}: ${m.content}`)
+    .join("\n");
 
   try {
-    const res = await client.chat.completions.create({
-      model: MODELS.INTENT,
+    const res = await chatComplete({
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Recent context:\n${recent || "(none)"}\n\nLatest user message: ${message}` },
+        {
+          role: "user",
+          content: `Recent context:\n${recent || "(none)"}\n\nLatest user message: ${message}`,
+        },
       ],
       max_tokens: 200,
       temperature: 0.1,
       response_format: { type: "json_object" },
     });
+    if (!res) return fallbackIntent(message);
     const raw = res.choices[0]?.message?.content ?? "";
     const parsed = JSON.parse(raw);
-    const topic = VALID_TOPICS.includes(parsed.topic) ? parsed.topic : "general";
+    const topic = VALID_TOPICS.includes(parsed.topic)
+      ? parsed.topic
+      : "general";
     return {
       topic,
       subTopic: typeof parsed.subTopic === "string" ? parsed.subTopic : null,
-      timeframe: ["past","current","near_future","long_term","unspecified"].includes(parsed.timeframe)
-        ? parsed.timeframe : "unspecified",
+      timeframe: [
+        "past",
+        "current",
+        "near_future",
+        "long_term",
+        "unspecified",
+      ].includes(parsed.timeframe)
+        ? parsed.timeframe
+        : "unspecified",
       isFollowUp: !!parsed.isFollowUp,
       isBirthDetailsRequest: !!parsed.isBirthDetailsRequest,
       isMetaQuestion: !!parsed.isMetaQuestion,

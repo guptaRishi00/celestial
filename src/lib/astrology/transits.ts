@@ -1,8 +1,9 @@
+import { chatComplete, isAIConfigured } from "@/lib/ai/client";
+import { buildChartDigest } from "@/lib/astrology/chart";
+import { calculateBhinnashtakvarga } from "./ashtakvarga";
 import { fetchRawPositions } from "./positions";
 import { computePositionsSweph } from "./positions-sweph";
 import type { NatalChart, PlanetPosition, TransitInfo } from "./types";
-import { getOpenRouterClient, MODELS } from "@/lib/ai/client";
-import { buildChartDigest } from "@/lib/astrology/chart";
 
 let CACHE: { date: string; info: TransitInfo | null } | null = null;
 
@@ -78,23 +79,51 @@ export function enrichTransitsForChart(
     const transitSaturn = housedPlanets.find((p) => p.name === "Saturn");
     if (transitSaturn) {
       const fromMoon = ((transitSaturn.sign - natalMoon.sign + 12) % 12) + 1;
+
+      // Classical refinement: Saturn's OWN Ashtakavarga bindu count in the transited
+      // sign grades how a Sade Sati phase is actually experienced — 5+ bindus is mild,
+      // 3 or fewer is severe. Without this, every native gets the same generic text
+      // regardless of how well-supported the transit actually is for them.
+      let bindusNote = "";
+      let bindus: number | undefined;
+      if (fromMoon === 12 || fromMoon === 1 || fromMoon === 2) {
+        const saturnBav = calculateBhinnashtakvarga(
+          "Saturn",
+          chart.planets,
+          chart.ascendant.sign,
+        );
+        bindus = saturnBav[transitSaturn.sign] ?? 0;
+        bindusNote =
+          bindus >= 5
+            ? ` Saturn holds ${bindus} Ashtakavarga bindus in this sign — classically a well-supported transit; expect disciplined progress more than hardship.`
+            : bindus <= 3
+              ? ` Saturn holds only ${bindus} Ashtakavarga bindus in this sign — classically a more demanding passage; sustained effort and the remedies below matter more than usual here.`
+              : ` Saturn holds ${bindus} Ashtakavarga bindus in this sign — a moderate, manageable transit.`;
+      }
+
       if (fromMoon === 12) {
         enriched.notable.sadeSati = {
           phase: "rising",
           description:
-            "Saturn transiting the 12th sign from natal Moon — early phase of Sade Sati. Expenses rise, sleep disturbances, foreign or distant matters become prominent.",
+            "Saturn transiting the 12th sign from natal Moon — early phase of Sade Sati. Expenses rise, sleep disturbances, foreign or distant matters become prominent." +
+            bindusNote,
+          bindus,
         };
       } else if (fromMoon === 1) {
         enriched.notable.sadeSati = {
           phase: "peak",
           description:
-            "Saturn transiting over natal Moon — peak phase of Sade Sati. Emotional weight, health considerations, and karmic lessons predominate.",
+            "Saturn transiting over natal Moon — peak phase of Sade Sati. Emotional weight, health considerations, and karmic lessons predominate." +
+            bindusNote,
+          bindus,
         };
       } else if (fromMoon === 2) {
         enriched.notable.sadeSati = {
           phase: "setting",
           description:
-            "Saturn transiting the 2nd sign from natal Moon — closing phase of Sade Sati. Family and financial matters demand attention.",
+            "Saturn transiting the 2nd sign from natal Moon — closing phase of Sade Sati. Family and financial matters demand attention." +
+            bindusNote,
+          bindus,
         };
       } else {
         enriched.notable.sadeSati = null;
@@ -207,11 +236,8 @@ export async function getFutureTransits(
     });
   }
 
-  const client = getOpenRouterClient();
-  if (!client) {
-    console.warn(
-      "⚠️ AI Predictions skipped: OpenRouter Client is not configured.",
-    );
+  if (!isAIConfigured()) {
+    console.warn("⚠️ AI Predictions skipped: no AI provider is configured.");
     return predictions;
   }
 
@@ -245,8 +271,7 @@ CRITICAL VEDIC RULES:
   ]
 }`;
 
-    const res = await client.chat.completions.create({
-      model: MODELS.REASONING,
+    const res = await chatComplete({
       messages: [
         { role: "system", content: systemPrompt },
         {
@@ -257,6 +282,7 @@ CRITICAL VEDIC RULES:
                 identity: digest.identity,
                 yogas: digest.yogas,
                 doshas: digest.doshas,
+                classicalTextGrounding: digest.classicalGrounding,
               },
               transits: transitSummary,
             },
@@ -269,6 +295,7 @@ CRITICAL VEDIC RULES:
       temperature: 0.8,
       max_tokens: 2000,
     });
+    if (!res) return predictions;
 
     const raw = res.choices[0]?.message?.content || "";
     const parsed = cleanAndParseJson<{ descriptions?: string[] }>(raw);

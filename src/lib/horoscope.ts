@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { chatComplete, isAIConfigured } from "@/lib/ai/client";
 import { getDb } from "@/lib/mongodb";
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -21,20 +21,6 @@ const ALL_SIGNS = [
 /** Returns today's date string in IST (Asia/Kolkata) as "YYYY-MM-DD" */
 function getTodayIST(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-}
-
-function getOpenAIClient() {
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-  if (!openRouterKey) return null;
-  return new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: openRouterKey,
-    defaultHeaders: {
-      "HTTP-Referer":
-        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-      "X-Title": "Celestial Astrology",
-    },
-  });
 }
 
 /** Robust JSON parser that strips conversational text around JSON content */
@@ -84,8 +70,7 @@ interface DetailedHoroscope {
 async function generateDailyHoroscopes(): Promise<
   DailyHoroscopeEntry[] | null
 > {
-  const openai = getOpenAIClient();
-  if (!openai) return null;
+  if (!isAIConfigured()) return null;
 
   const prompt = `You are an expert Vedic astrologer (Jyotishi). Generate today's daily rashi phal (horoscope) for all 12 rashis based on current graha gochar (planetary transits) using Sidereal/Vedic principles.
 
@@ -101,11 +86,12 @@ Return ONLY a valid JSON array where each item has this exact structure:
 ]
 Do not include any markdown formatting blocks like \`\`\`json. Just return the raw JSON array string. Ensure all 12 signs are included exactly as: Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn, Aquarius, Pisces.`;
 
-  const response = await openai.chat.completions.create({
-    model: "deepseek/deepseek-chat",
+  const response = await chatComplete({
     messages: [{ role: "user", content: prompt }],
     temperature: 0.7,
+    max_tokens: 2500, // 12 short (~2 sentence) entries — previously unset, defaulted to ~16000 and caused 402s
   });
+  if (!response) return null;
 
   const content = response.choices[0]?.message?.content || "[]";
   return cleanAndParseJson<DailyHoroscopeEntry[]>(content, "array");
@@ -115,8 +101,7 @@ async function generateAllDetailedHoroscopes(): Promise<Record<
   string,
   DetailedHoroscope
 > | null> {
-  const openai = getOpenAIClient();
-  if (!openai) return null;
+  if (!isAIConfigured()) return null;
 
   const prompt = `You are an expert Vedic astrologer. Generate highly detailed daily horoscopes for ALL 12 zodiac signs for today.
 
@@ -137,11 +122,12 @@ Return ONLY a valid JSON object where each key is the sign name (lowercase) and 
 Include all 12 signs: aries, taurus, gemini, cancer, leo, virgo, libra, scorpio, sagittarius, capricorn, aquarius, pisces.
 Do not include any markdown formatting blocks. Return ONLY the raw JSON object.`;
 
-  const response = await openai.chat.completions.create({
-    model: "deepseek/deepseek-chat",
+  const response = await chatComplete({
     messages: [{ role: "user", content: prompt }],
     temperature: 0.7,
+    max_tokens: 6000, // 12 signs x 6 fields — previously unset, defaulted to ~16000 and caused 402s
   });
+  if (!response) return null;
 
   const content = response.choices[0]?.message?.content || "{}";
   return cleanAndParseJson<Record<string, DetailedHoroscope>>(
@@ -258,8 +244,7 @@ export async function getDetailedHoroscope(
       return data;
     }
 
-    const openai = getOpenAIClient();
-    if (!openai) return null;
+    if (!isAIConfigured()) return null;
 
     const prompt = `You are an expert Vedic astrologer. Generate a highly detailed, personalized daily horoscope for the zodiac sign ${sign} for today.
 Provide the reading in a structured JSON format with the following keys:
@@ -273,11 +258,12 @@ Provide the reading in a structured JSON format with the following keys:
 }
 Return ONLY the raw JSON object string without any markdown formatting.`;
 
-    const response = await openai.chat.completions.create({
-      model: "deepseek/deepseek-chat",
+    const response = await chatComplete({
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
+      max_tokens: 800, // single sign, 6 short fields — previously unset, defaulted to ~16000
     });
+    if (!response) return null;
 
     const content = response.choices[0]?.message?.content || "{}";
     const data = cleanAndParseJson<DetailedHoroscope>(content, "object");

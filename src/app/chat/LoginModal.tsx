@@ -1,9 +1,10 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Sparkles } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
+import PanditAvatar from "./PanditAvatar";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -81,9 +82,7 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
 
           {/* Header */}
           <div className="px-8 pt-8 pb-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-hero-accent/20 to-hero-warm/20 border border-hero-accent/30 flex items-center justify-center text-2xl mx-auto mb-4 shadow-[0_0_30px_rgba(196,161,255,0.15)]">
-              🙏
-            </div>
+            <PanditAvatar className="w-16 h-16 mx-auto mb-4" imgPx={128} />
             <h2 className="font-voyage text-2xl font-bold text-white mb-1">
               {isSignup ? t("login.joinTitle") : t("login.welcomeBack")}
             </h2>
@@ -121,7 +120,10 @@ export default function LoginModal({ onClose, onSuccess }: LoginModalProps) {
                 {/* Birth details */}
                 <div className="mt-1">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-hero-accent text-sm">✧</span>
+                    <Sparkles
+                      className="w-3.5 h-3.5 text-hero-accent"
+                      strokeWidth={2}
+                    />
                     <span className="text-xs text-white/30 font-kobe tracking-wider uppercase">
                       {t("login.birthDetails")}
                     </span>

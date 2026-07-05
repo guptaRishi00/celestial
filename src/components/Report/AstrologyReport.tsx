@@ -1,112 +1,113 @@
-import React from 'react';
 import {
-  Page,
-  Text,
-  View,
   Document,
-  StyleSheet,
   Font,
   Image,
-} from '@react-pdf/renderer';
-import path from 'path';
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from "@react-pdf/renderer";
+import path from "path";
+import type React from "react";
+import type { SarvashtakvargaResult } from "@/lib/astrology/ashtakvarga";
+import type { DivisionalCharts } from "@/lib/astrology/divisional";
+import type { ChartGemstones } from "@/lib/astrology/gemstones";
+import type { DeepInterpretations } from "@/lib/astrology/interpretations";
+import type { MonthlyPrediction } from "@/lib/astrology/transits";
+import type { NatalChart } from "@/lib/astrology/types";
 
-import type { NatalChart } from '@/lib/astrology/types';
-import type { ChartGemstones } from '@/lib/astrology/gemstones';
-import type { MonthlyPrediction } from '@/lib/astrology/transits';
-import type { DivisionalCharts } from '@/lib/astrology/divisional';
-import type { SarvashtakvargaResult } from '@/lib/astrology/ashtakvarga';
-import type { DeepInterpretations } from '@/lib/astrology/interpretations';
-
-import { KundaliChartNorth } from './KundaliChartNorth';
-import { KundaliChartSouth } from './KundaliChartSouth';
+import { KundaliChartNorth } from "./KundaliChartNorth";
+import { KundaliChartSouth } from "./KundaliChartSouth";
 
 Font.register({
-  family: 'Hind',
-  src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/hind/Hind-Regular.ttf',
+  family: "Hind",
+  src: "https://raw.githubusercontent.com/google/fonts/main/ofl/hind/Hind-Regular.ttf",
 });
 
 // Devanagari script support — required for the cover-page "ॐ" glyph and any
 // Hindi content rendered in the PDF. Without this Font.register the renderer
 // throws "Font family not registered" and the whole report build fails.
 Font.register({
-  family: 'Noto Sans Devanagari',
+  family: "Noto Sans Devanagari",
   fonts: [
     {
-      src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/notosansdevanagari/NotoSansDevanagari%5Bwdth%2Cwght%5D.ttf',
-      fontWeight: 'normal',
+      src: "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansdevanagari/NotoSansDevanagari%5Bwdth%2Cwght%5D.ttf",
+      fontWeight: "normal",
     },
   ],
 });
 
 const THEME = {
-  primary: '#4A1E1E',
-  accent: '#C8A96B',
-  background: '#F8F4EC',
-  surface: '#FFFDF8',
-  text: '#2A2A2A',
-  muted: '#6B6B6B',
-  border: '#E6D8BD',
+  primary: "#4A1E1E",
+  accent: "#C8A96B",
+  background: "#F8F4EC",
+  surface: "#FFFDF8",
+  text: "#2A2A2A",
+  muted: "#6B6B6B",
+  border: "#E6D8BD",
 };
 
 const DICT = {
   en: {
-    title: 'Sacred Kundali Report',
-    brand: 'Future Dekho',
-    dob: 'Date of Birth',
-    time: 'Time of Birth',
-    place: 'Place of Birth',
-    chartsTitle: 'Divisional Charts',
-    d1Chart: 'D1 Natal Chart',
-    moonChart: 'Moon Chart',
-    chalitChart: 'Bhava Chalit Chart',
-    d9Chart: 'D9 Navamsa Chart',
-    d10Chart: 'D10 Dasamamsa Chart',
-    gemstonesTitle: 'Gemstones & Rudraksha',
-    lifeStone: 'Life Stone',
-    luckyStone: 'Lucky Stone',
-    fortuneStone: 'Fortune Stone',
-    dashaStone: 'Current Dasha Stone',
-    rudraksha: 'Recommended Rudraksha',
-    metal: 'Metal',
-    finger: 'Finger',
-    day: 'Wearing Day',
-    planets: 'Planetary Positions',
-    savTitle: 'Sarvashtakvarga',
-    predictionsTitle: 'Future Predictions',
-    interpretations: 'Astrological Interpretations',
-    personality: 'Personality',
-    profession: 'Profession',
-    father: 'Father & Fortune',
+    title: "Sacred Kundali Report",
+    brand: "Future Dekho",
+    dob: "Date of Birth",
+    time: "Time of Birth",
+    place: "Place of Birth",
+    chartsTitle: "Divisional Charts",
+    d1Chart: "D1 Natal Chart",
+    moonChart: "Moon Chart",
+    chalitChart: "Bhava Chalit Chart",
+    d9Chart: "D9 Navamsa Chart",
+    d10Chart: "D10 Dasamamsa Chart",
+    gemstonesTitle: "Gemstones & Rudraksha",
+    lifeStone: "Life Stone",
+    luckyStone: "Lucky Stone",
+    fortuneStone: "Fortune Stone",
+    dashaStone: "Current Dasha Stone",
+    rudraksha: "Recommended Rudraksha",
+    metal: "Metal",
+    finger: "Finger",
+    day: "Wearing Day",
+    planets: "Planetary Positions",
+    savTitle: "Sarvashtakvarga",
+    predictionsTitle: "Future Predictions",
+    interpretations: "Astrological Interpretations",
+    personality: "Personality",
+    profession: "Profession",
+    father: "Father & Fortune",
+    classicalNote: "Classical note",
   },
 
   hi: {
-    title: 'पवित्र जन्म कुंडली',
-    brand: 'सेलेस्टियल एडिटोरियल',
-    dob: 'जन्म तिथि',
-    time: 'जन्म समय',
-    place: 'जन्म स्थान',
-    chartsTitle: 'वर्ग कुंडलियां',
-    d1Chart: 'D1 लग्न कुंडली',
-    moonChart: 'चंद्र कुंडली',
-    chalitChart: 'भाव चलित कुंडली',
-    d9Chart: 'D9 नवमांश कुंडली',
-    d10Chart: 'D10 दशमांश कुंडली',
-    gemstonesTitle: 'रत्न एवं रुद्राक्ष',
-    lifeStone: 'जीवन रत्न',
-    luckyStone: 'भाग्य रत्न',
-    fortuneStone: 'भाग्य रत्न',
-    dashaStone: 'वर्तमान दशा रत्न',
-    rudraksha: 'अनुशंसित रुद्राक्ष',
-    metal: 'धातु',
-    finger: 'उंगली',
-    day: 'पहनने का दिन',
-    planets: 'ग्रह स्थिति',
-    savTitle: 'सर्वाष्टकवर्ग',
-    predictionsTitle: 'भविष्यवाणियां',
-    interpretations: 'ज्योतिषीय रहस्योद्घाटन',
-    personality: 'व्यक्तित्व',
-    profession: 'व्यवसाय',
-    father: 'धर्म एवं भाग्य',
+    title: "पवित्र जन्म कुंडली",
+    brand: "सेलेस्टियल एडिटोरियल",
+    dob: "जन्म तिथि",
+    time: "जन्म समय",
+    place: "जन्म स्थान",
+    chartsTitle: "वर्ग कुंडलियां",
+    d1Chart: "D1 लग्न कुंडली",
+    moonChart: "चंद्र कुंडली",
+    chalitChart: "भाव चलित कुंडली",
+    d9Chart: "D9 नवमांश कुंडली",
+    d10Chart: "D10 दशमांश कुंडली",
+    gemstonesTitle: "रत्न एवं रुद्राक्ष",
+    lifeStone: "जीवन रत्न",
+    luckyStone: "भाग्य रत्न",
+    fortuneStone: "भाग्य रत्न",
+    dashaStone: "वर्तमान दशा रत्न",
+    rudraksha: "अनुशंसित रुद्राक्ष",
+    metal: "धातु",
+    finger: "उंगली",
+    day: "पहनने का दिन",
+    planets: "ग्रह स्थिति",
+    savTitle: "सर्वाष्टकवर्ग",
+    predictionsTitle: "भविष्यवाणियां",
+    interpretations: "ज्योतिषीय रहस्योद्घाटन",
+    personality: "व्यक्तित्व",
+    profession: "व्यवसाय",
+    father: "धर्म एवं भाग्य",
+    classicalNote: "शास्त्रीय टिप्पणी",
   },
 };
 
@@ -116,8 +117,8 @@ const styles = StyleSheet.create({
     paddingTop: 45,
     paddingBottom: 45,
     paddingHorizontal: 40,
-    fontFamily: 'Helvetica',
-    position: 'relative',
+    fontFamily: "Helvetica",
+    position: "relative",
   },
 
   pageHindi: {
@@ -125,12 +126,12 @@ const styles = StyleSheet.create({
     paddingTop: 45,
     paddingBottom: 45,
     paddingHorizontal: 40,
-    fontFamily: 'Hind',
-    position: 'relative',
+    fontFamily: "Hind",
+    position: "relative",
   },
 
   fullBgImage: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -147,22 +148,22 @@ const styles = StyleSheet.create({
     color: THEME.accent,
     letterSpacing: 4,
     marginBottom: 16,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 
   reportTitle: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: THEME.primary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 12,
     letterSpacing: 2,
   },
 
   coverContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   coverOm: {
@@ -179,19 +180,19 @@ const styles = StyleSheet.create({
     borderColor: THEME.border,
     borderRadius: 10,
     backgroundColor: THEME.surface,
-    width: '80%',
+    width: "80%",
   },
 
   detailText: {
     fontSize: 13,
     color: THEME.text,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: THEME.primary,
     marginBottom: 14,
     paddingBottom: 6,
@@ -204,32 +205,32 @@ const styles = StyleSheet.create({
     width: 80,
     height: 1,
     backgroundColor: THEME.accent,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginVertical: 14,
   },
 
   subTitle: {
     fontSize: 13,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: THEME.primary,
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   chartRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginVertical: 20,
   },
 
   chartCol: {
-    width: '48%',
+    width: "48%",
     padding: 12,
     borderWidth: 1,
     borderColor: THEME.border,
     borderRadius: 10,
     backgroundColor: THEME.surface,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   card: {
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
 
   cardTitle: {
     fontSize: 13,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: THEME.primary,
     marginBottom: 10,
   },
@@ -263,74 +264,74 @@ const styles = StyleSheet.create({
   },
 
   tableRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: THEME.border,
   },
 
   tableHeader: {
-    backgroundColor: '#F1E7D0',
+    backgroundColor: "#F1E7D0",
   },
 
   tableColSm: {
-    width: '20%',
+    width: "20%",
     padding: 8,
     borderRightWidth: 1,
     borderRightColor: THEME.border,
   },
 
   tableColLg: {
-    width: '40%',
+    width: "40%",
     padding: 8,
   },
 
   tableCellHeader: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: THEME.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   tableCell: {
     fontSize: 10.5,
     color: THEME.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   savContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginTop: 20,
   },
 
   savCard: {
-    width: '30%',
+    width: "30%",
     marginBottom: 14,
     borderWidth: 1,
     borderColor: THEME.border,
     borderRadius: 8,
     backgroundColor: THEME.surface,
     padding: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   savLabel: {
     fontSize: 11,
     color: THEME.primary,
     marginBottom: 8,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   savValue: {
     fontSize: 18,
     color: THEME.accent,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 
 const getAssetPath = (filename: string) => {
-  return path.join(process.cwd(), 'public', filename);
+  return path.join(process.cwd(), "public", filename);
 };
 
 const ReportPage = ({
@@ -338,14 +339,14 @@ const ReportPage = ({
   lang,
 }: {
   children: React.ReactNode;
-  lang: 'en' | 'hi';
+  lang: "en" | "hi";
 }) => {
-  const pageStyle = lang === 'hi' ? styles.pageHindi : styles.page;
+  const pageStyle = lang === "hi" ? styles.pageHindi : styles.page;
 
   return (
     <Page size="A4" style={pageStyle}>
       <Image
-        src={getAssetPath('mandala-bg.png')}
+        src={getAssetPath("mandala-bg.png")}
         style={styles.fullBgImage}
         fixed
       />
@@ -360,7 +361,7 @@ const Divider = () => <View style={styles.divider} />;
 interface AstrologyReportProps {
   chart: NatalChart;
   userName?: string;
-  lang?: 'en' | 'hi';
+  lang?: "en" | "hi";
   gemstones: ChartGemstones;
   futurePredictions: MonthlyPrediction[];
   divisional: DivisionalCharts;
@@ -370,8 +371,8 @@ interface AstrologyReportProps {
 
 export const AstrologyReport = ({
   chart,
-  userName = 'Native',
-  lang = 'en',
+  userName = "Native",
+  lang = "en",
   gemstones,
   futurePredictions,
   divisional,
@@ -388,7 +389,7 @@ export const AstrologyReport = ({
           <Text
             style={{
               ...styles.coverOm,
-              fontFamily: 'Noto Sans Devanagari',
+              fontFamily: "Noto Sans Devanagari",
               fontSize: 90,
               color: THEME.primary,
               marginBottom: 18,
@@ -408,7 +409,7 @@ export const AstrologyReport = ({
               style={{
                 ...styles.detailText,
                 fontSize: 18,
-                fontWeight: 'bold',
+                fontWeight: "bold",
                 color: THEME.primary,
               }}
             >
@@ -481,9 +482,7 @@ export const AstrologyReport = ({
 
       {/* D9 + D10 */}
       <ReportPage lang={lang}>
-        <Text style={styles.sectionTitle}>
-          {t.chartsTitle} II
-        </Text>
+        <Text style={styles.sectionTitle}>{t.chartsTitle} II</Text>
 
         <Text style={styles.subTitle}>{t.d9Chart}</Text>
 
@@ -544,14 +543,10 @@ export const AstrologyReport = ({
 
       {/* INTERPRETATIONS */}
       <ReportPage lang={lang}>
-        <Text style={styles.sectionTitle}>
-          {t.interpretations}
-        </Text>
+        <Text style={styles.sectionTitle}>{t.interpretations}</Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            {t.personality}
-          </Text>
+          <Text style={styles.cardTitle}>{t.personality}</Text>
 
           <Text style={styles.textBlock}>
             {deepInterpretations.personality}
@@ -559,31 +554,21 @@ export const AstrologyReport = ({
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            {t.profession}
-          </Text>
+          <Text style={styles.cardTitle}>{t.profession}</Text>
 
-          <Text style={styles.textBlock}>
-            {deepInterpretations.profession}
-          </Text>
+          <Text style={styles.textBlock}>{deepInterpretations.profession}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            {t.father}
-          </Text>
+          <Text style={styles.cardTitle}>{t.father}</Text>
 
-          <Text style={styles.textBlock}>
-            {deepInterpretations.father}
-          </Text>
+          <Text style={styles.textBlock}>{deepInterpretations.father}</Text>
         </View>
       </ReportPage>
 
       {/* GEMSTONES */}
       <ReportPage lang={lang}>
-        <Text style={styles.sectionTitle}>
-          {t.gemstonesTitle}
-        </Text>
+        <Text style={styles.sectionTitle}>{t.gemstonesTitle}</Text>
 
         {[
           gemstones.lifeStone,
@@ -596,9 +581,7 @@ export const AstrologyReport = ({
               {stone.stone} ({stone.planet})
             </Text>
 
-            <Text style={styles.textBlock}>
-              {stone.purpose}
-            </Text>
+            <Text style={styles.textBlock}>{stone.purpose}</Text>
 
             <Text
               style={{
@@ -607,53 +590,52 @@ export const AstrologyReport = ({
                 color: THEME.muted,
               }}
             >
-              {t.metal}: {stone.metal} | {t.finger}:{' '}
-              {stone.finger} | {t.day}: {stone.day}
+              {t.metal}: {stone.metal} | {t.finger}: {stone.finger} | {t.day}:{" "}
+              {stone.day}
             </Text>
+
+            {stone.caution && (
+              <Text
+                style={{
+                  ...styles.textBlock,
+                  marginTop: 10,
+                  color: THEME.primary,
+                  fontStyle: "italic",
+                }}
+              >
+                {t.classicalNote}: {stone.caution}
+              </Text>
+            )}
           </View>
         ))}
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            {t.rudraksha}
-          </Text>
+          <Text style={styles.cardTitle}>{t.rudraksha}</Text>
 
-          <Text style={styles.textBlock}>
-            {gemstones.rudraksha}
-          </Text>
+          <Text style={styles.textBlock}>{gemstones.rudraksha}</Text>
         </View>
       </ReportPage>
 
       {/* PLANETS */}
       <ReportPage lang={lang}>
-        <Text style={styles.sectionTitle}>
-          {t.planets}
-        </Text>
+        <Text style={styles.sectionTitle}>{t.planets}</Text>
 
         <View style={styles.table}>
           <View style={[styles.tableRow, styles.tableHeader]}>
             <View style={styles.tableColSm}>
-              <Text style={styles.tableCellHeader}>
-                Planet
-              </Text>
+              <Text style={styles.tableCellHeader}>Planet</Text>
             </View>
 
             <View style={styles.tableColSm}>
-              <Text style={styles.tableCellHeader}>
-                Sign
-              </Text>
+              <Text style={styles.tableCellHeader}>Sign</Text>
             </View>
 
             <View style={styles.tableColSm}>
-              <Text style={styles.tableCellHeader}>
-                Degree
-              </Text>
+              <Text style={styles.tableCellHeader}>Degree</Text>
             </View>
 
             <View style={styles.tableColLg}>
-              <Text style={styles.tableCellHeader}>
-                Nakshatra
-              </Text>
+              <Text style={styles.tableCellHeader}>Nakshatra</Text>
             </View>
           </View>
 
@@ -662,22 +644,15 @@ export const AstrologyReport = ({
               key={index}
               style={{
                 ...styles.tableRow,
-                backgroundColor:
-                  index % 2 === 0
-                    ? '#FCF8F0'
-                    : THEME.surface,
+                backgroundColor: index % 2 === 0 ? "#FCF8F0" : THEME.surface,
               }}
             >
               <View style={styles.tableColSm}>
-                <Text style={styles.tableCell}>
-                  {planet.name}
-                </Text>
+                <Text style={styles.tableCell}>{planet.name}</Text>
               </View>
 
               <View style={styles.tableColSm}>
-                <Text style={styles.tableCell}>
-                  {planet.signName}
-                </Text>
+                <Text style={styles.tableCell}>{planet.signName}</Text>
               </View>
 
               <View style={styles.tableColSm}>
@@ -688,8 +663,7 @@ export const AstrologyReport = ({
 
               <View style={styles.tableColLg}>
                 <Text style={styles.tableCell}>
-                  {planet.nakshatraName} (
-                  {planet.nakshatraPada})
+                  {planet.nakshatraName} ({planet.nakshatraPada})
                 </Text>
               </View>
             </View>
@@ -699,19 +673,13 @@ export const AstrologyReport = ({
 
       {/* FUTURE */}
       <ReportPage lang={lang}>
-        <Text style={styles.sectionTitle}>
-          {t.predictionsTitle}
-        </Text>
+        <Text style={styles.sectionTitle}>{t.predictionsTitle}</Text>
 
         {futurePredictions.map((pred, idx) => (
           <View key={idx} style={styles.card}>
-            <Text style={styles.cardTitle}>
-              {pred.month}
-            </Text>
+            <Text style={styles.cardTitle}>{pred.month}</Text>
 
-            <Text style={styles.textBlock}>
-              {pred.description}
-            </Text>
+            <Text style={styles.textBlock}>{pred.description}</Text>
           </View>
         ))}
       </ReportPage>

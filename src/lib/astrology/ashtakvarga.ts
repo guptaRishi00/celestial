@@ -1,5 +1,5 @@
+import type { PlanetName } from "./constants";
 import type { PlanetPosition } from "./types";
-import { PlanetName } from "./constants";
 
 // The standard 337-bindu Sarvashtakvarga matrix.
 // This is a simplified deterministic Parashari calculation.
@@ -14,7 +14,7 @@ const BINDU_RULES: Record<string, Record<string, number[]>> = {
     Jupiter: [5, 6, 9, 11],
     Venus: [6, 7, 12],
     Saturn: [1, 2, 4, 7, 8, 9, 10, 11],
-    Asc: [3, 4, 6, 10, 11, 12]
+    Asc: [3, 4, 6, 10, 11, 12],
   },
   Moon: {
     Sun: [3, 6, 7, 8, 10, 11],
@@ -24,7 +24,7 @@ const BINDU_RULES: Record<string, Record<string, number[]>> = {
     Jupiter: [1, 4, 7, 8, 10, 11, 12],
     Venus: [3, 4, 5, 7, 9, 10, 11],
     Saturn: [3, 5, 6, 11],
-    Asc: [3, 6, 10, 11]
+    Asc: [3, 6, 10, 11],
   },
   Mars: {
     Sun: [3, 5, 6, 10, 11],
@@ -34,7 +34,7 @@ const BINDU_RULES: Record<string, Record<string, number[]>> = {
     Jupiter: [6, 10, 11, 12],
     Venus: [6, 8, 11, 12],
     Saturn: [1, 4, 7, 8, 9, 10, 11],
-    Asc: [1, 3, 6, 10, 11]
+    Asc: [1, 3, 6, 10, 11],
   },
   Mercury: {
     Sun: [5, 6, 9, 11, 12],
@@ -44,7 +44,7 @@ const BINDU_RULES: Record<string, Record<string, number[]>> = {
     Jupiter: [6, 8, 11, 12],
     Venus: [1, 2, 3, 4, 5, 8, 9, 11],
     Saturn: [1, 2, 4, 7, 8, 9, 10, 11],
-    Asc: [1, 2, 4, 6, 8, 10, 11]
+    Asc: [1, 2, 4, 6, 8, 10, 11],
   },
   Jupiter: {
     Sun: [1, 2, 3, 4, 7, 8, 9, 10, 11],
@@ -54,7 +54,7 @@ const BINDU_RULES: Record<string, Record<string, number[]>> = {
     Jupiter: [1, 2, 3, 4, 7, 8, 10, 11],
     Venus: [2, 5, 6, 9, 10, 11],
     Saturn: [3, 5, 6, 12],
-    Asc: [1, 2, 4, 5, 6, 7, 9, 10, 11]
+    Asc: [1, 2, 4, 5, 6, 7, 9, 10, 11],
   },
   Venus: {
     Sun: [8, 11, 12],
@@ -64,55 +64,105 @@ const BINDU_RULES: Record<string, Record<string, number[]>> = {
     Jupiter: [5, 8, 9, 10, 11],
     Venus: [1, 2, 3, 4, 5, 8, 9, 10, 11],
     Saturn: [3, 4, 5, 8, 9, 10, 11],
-    Asc: [1, 2, 3, 4, 5, 8, 9, 11]
+    Asc: [1, 2, 3, 4, 5, 8, 9, 11],
   },
   Saturn: {
     Sun: [1, 2, 4, 7, 8, 10, 11],
     Moon: [3, 6, 11],
-    Mars: [3, 5, 6, 10, 11],
+    Mars: [3, 5, 6, 10, 11, 12],
     Mercury: [6, 8, 9, 10, 11, 12],
     Jupiter: [5, 6, 11, 12],
     Venus: [6, 11, 12],
     Saturn: [3, 5, 6, 11],
-    Asc: [1, 3, 4, 6, 10, 11]
-  }
+    Asc: [1, 3, 4, 6, 10, 11],
+  },
 };
 
 export type SarvashtakvargaResult = Record<number, number>; // sign (1-12) -> total bindus
+export type BhinnashtakvargaResult = Record<number, number>; // sign (1-12) -> bindus for ONE planet
 
-export function calculateSarvashtakvarga(planets: PlanetPosition[], ascendantSign: number): SarvashtakvargaResult {
-  const result: SarvashtakvargaResult = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0 };
-  
-  const activePlanets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"] as PlanetName[];
+const ACTIVE_PLANETS = [
+  "Sun",
+  "Moon",
+  "Mars",
+  "Mercury",
+  "Jupiter",
+  "Venus",
+  "Saturn",
+] as PlanetName[];
 
-  for (const mainPlanet of activePlanets) {
-    const rules = BINDU_RULES[mainPlanet];
-    if (!rules) continue;
+/** One planet's own Bhinnashtakavarga — e.g. Saturn's bindu count in each sign, used
+ * classically to grade transit/Sade-Sati severity (not just the combined Sarva total). */
+export function calculateBhinnashtakvarga(
+  targetPlanet: PlanetName,
+  planets: PlanetPosition[],
+  ascendantSign: number,
+): BhinnashtakvargaResult {
+  const result: BhinnashtakvargaResult = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 0,
+    8: 0,
+    9: 0,
+    10: 0,
+    11: 0,
+    12: 0,
+  };
+  const rules = BINDU_RULES[targetPlanet];
+  if (!rules) return result;
 
-    // For the mainPlanet's Ashtakvarga, we check positions of all 7 planets + Ascendant
-    for (const evaluatingPlanet of activePlanets) {
-      const plPos = planets.find(p => p.name === evaluatingPlanet);
-      if (!plPos) continue;
-
-      const binduHouses = rules[evaluatingPlanet]; // e.g. from Sun, Sun casts in 1, 2, 4...
-      if (!binduHouses) continue;
-
-      for (const offset of binduHouses) {
-        // offset is 1-indexed. offset 1 means the same sign.
-        const targetSign = ((plPos.sign - 1 + offset - 1) % 12) + 1;
-        result[targetSign] += 1;
-      }
-    }
-
-    // Ascendant contributions
-    const ascRules = rules["Asc"];
-    if (ascRules) {
-      for (const offset of ascRules) {
-        const targetSign = ((ascendantSign - 1 + offset - 1) % 12) + 1;
-        result[targetSign] += 1;
-      }
+  for (const evaluatingPlanet of ACTIVE_PLANETS) {
+    const plPos = planets.find((p) => p.name === evaluatingPlanet);
+    if (!plPos) continue;
+    const binduHouses = rules[evaluatingPlanet]; // e.g. from Sun, Sun casts in 1, 2, 4...
+    if (!binduHouses) continue;
+    for (const offset of binduHouses) {
+      // offset is 1-indexed. offset 1 means the same sign.
+      const targetSign = ((plPos.sign - 1 + offset - 1) % 12) + 1;
+      result[targetSign] += 1;
     }
   }
 
+  const ascRules = rules["Asc"];
+  if (ascRules) {
+    for (const offset of ascRules) {
+      const targetSign = ((ascendantSign - 1 + offset - 1) % 12) + 1;
+      result[targetSign] += 1;
+    }
+  }
+
+  return result;
+}
+
+export function calculateSarvashtakvarga(
+  planets: PlanetPosition[],
+  ascendantSign: number,
+): SarvashtakvargaResult {
+  const result: SarvashtakvargaResult = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 0,
+    8: 0,
+    9: 0,
+    10: 0,
+    11: 0,
+    12: 0,
+  };
+  for (const mainPlanet of ACTIVE_PLANETS) {
+    const bhinna = calculateBhinnashtakvarga(
+      mainPlanet,
+      planets,
+      ascendantSign,
+    );
+    for (let sign = 1; sign <= 12; sign++) result[sign] += bhinna[sign];
+  }
   return result;
 }

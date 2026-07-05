@@ -1,7 +1,7 @@
-import type { NatalChart } from "./types";
-import { SIGNS_VEDIC } from "./constants";
-import { getOpenRouterClient, MODELS } from "@/lib/ai/client";
+import { chatComplete, isAIConfigured } from "@/lib/ai/client";
 import { buildChartDigest } from "@/lib/astrology/chart";
+import { SIGNS_VEDIC } from "./constants";
+import type { NatalChart } from "./types";
 
 export interface DeepInterpretations {
   personality: string;
@@ -9,33 +9,41 @@ export interface DeepInterpretations {
   father: string;
 }
 
-export function generateDeepInterpretations(chart: NatalChart): DeepInterpretations {
+export function generateDeepInterpretations(
+  chart: NatalChart,
+): DeepInterpretations {
   const ascSign = chart.ascendant.signName;
   const ascLord = chart.houseLords[1];
-  const moonSign = chart.planets.find(p => p.name === "Moon")?.signName || "";
-  const sunSign = chart.planets.find(p => p.name === "Sun")?.signName || "";
+  const moonSign = chart.planets.find((p) => p.name === "Moon")?.signName || "";
+  const sunSign = chart.planets.find((p) => p.name === "Sun")?.signName || "";
 
-  let personality = `With ${ascSign} rising on the Ascendant, your core approach to life is shaped by the energy of this sign, while your ruling planet ${ascLord} acts as the steering wheel for your physical and mental vitality. Your Moon in ${moonSign} dictates your emotional inner world. Meanwhile, your Sun in ${sunSign} illuminates your ego and soul purpose.`;
+  const personality = `With ${ascSign} rising on the Ascendant, your core approach to life is shaped by the energy of this sign, while your ruling planet ${ascLord} acts as the steering wheel for your physical and mental vitality. Your Moon in ${moonSign} dictates your emotional inner world. Meanwhile, your Sun in ${sunSign} illuminates your ego and soul purpose.`;
 
   const tenthLord = chart.houseLords[10];
-  const planetsIn10th = chart.planets.filter(p => p.house === 10);
+  const planetsIn10th = chart.planets.filter((p) => p.house === 10);
   let profession = `The 10th house governs your career. It is ruled by ${tenthLord}. `;
-  if (planetsIn10th.length > 0) profession += `The presence of ${planetsIn10th.map(p => p.name).join(" and ")} strongly colours your professional life. `;
-  else profession += `The dignity of ${tenthLord} indicates your career trajectory. `;
+  if (planetsIn10th.length > 0)
+    profession += `The presence of ${planetsIn10th.map((p) => p.name).join(" and ")} strongly colours your professional life. `;
+  else
+    profession += `The dignity of ${tenthLord} indicates your career trajectory. `;
 
   const ninthLord = chart.houseLords[9];
-  const planetsIn9th = chart.planets.filter(p => p.house === 9);
-  const sunPos = chart.planets.find(p => p.name === "Sun");
+  const planetsIn9th = chart.planets.filter((p) => p.house === 9);
+  const sunPos = chart.planets.find((p) => p.name === "Sun");
   let father = `The 9th house is ruled by ${ninthLord}. `;
-  if (planetsIn9th.length > 0) father += `The presence of ${planetsIn9th.map(p => p.name).join(" and ")} affects your beliefs and relationship with your father. `;
-  if (sunPos) father += `The Sun is in your ${sunPos.house}th house in ${sunPos.signName}, indicating your connection to authority.`;
+  if (planetsIn9th.length > 0)
+    father += `The presence of ${planetsIn9th.map((p) => p.name).join(" and ")} affects your beliefs and relationship with your father. `;
+  if (sunPos)
+    father += `The Sun is in your ${sunPos.house}th house in ${sunPos.signName}, indicating your connection to authority.`;
 
   return { personality, profession, father };
 }
 
-export async function generateAIInterpretations(chart: NatalChart, lang: "en" | "hi"): Promise<DeepInterpretations> {
-  const client = getOpenRouterClient();
-  if (!client) return generateDeepInterpretations(chart); // Fallback to deterministic
+export async function generateAIInterpretations(
+  chart: NatalChart,
+  lang: "en" | "hi",
+): Promise<DeepInterpretations> {
+  if (!isAIConfigured()) return generateDeepInterpretations(chart); // Fallback to deterministic
 
   const digest = buildChartDigest(chart, null);
   const chartContext = {
@@ -43,7 +51,8 @@ export async function generateAIInterpretations(chart: NatalChart, lang: "en" | 
     planets: digest.planets,
     houseSummary: digest.houseSummary,
     yogas: digest.yogas,
-    doshas: digest.doshas
+    doshas: digest.doshas,
+    classicalTextGrounding: digest.classicalGrounding,
   };
 
   const systemPrompt = `You are an expert Vedic Astrologer creating a PDF report. Analyze the provided Kundali JSON and generate three deep, insightful paragraphs:
@@ -55,19 +64,20 @@ RULES:
 - Use ONLY Vedic astrology principles (no Western tropical).
 - Write in ${lang === "hi" ? "pure Hindi (Devanagari script)" : "English"}.
 - Be profound, highly detailed, and sound like a wise traditional Jyotishi.
+- Where classicalTextGrounding gives a citation relevant to what you're describing, reference it directly (e.g. "as the Bṛhat Parāśara Horā Śāstra notes..."). Never invent a citation that isn't in classicalTextGrounding.
 - Output ONLY a JSON object with keys "personality", "profession", and "father".`;
 
   try {
-    const res = await client.chat.completions.create({
-      model: MODELS.REASONING,
+    const res = await chatComplete({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(chartContext, null, 2) }
+        { role: "user", content: JSON.stringify(chartContext, null, 2) },
       ],
       response_format: { type: "json_object" },
       temperature: 0.7,
       max_tokens: 1500,
     });
+    if (!res) return generateDeepInterpretations(chart);
 
     const raw = res.choices[0]?.message?.content ?? "";
     const parsed = JSON.parse(raw) as DeepInterpretations;
