@@ -10,6 +10,26 @@ const translations = {
   "header.signUp": { en: "Sign up", hi: "साइन अप" },
   "header.myProfile": { en: "My Profile", hi: "मेरी प्रोफ़ाइल" },
   "header.generateReport": { en: "Kundli Report", hi: "कुंडली रिपोर्ट" },
+  "header.reportSubtitle": {
+    en: "Your detailed birth-chart PDF",
+    hi: "आपकी विस्तृत जन्म-कुंडली PDF",
+  },
+  "header.chatSubtitle": {
+    en: "Guidance from a Vedic astrologer",
+    hi: "वैदिक ज्योतिषी से मार्गदर्शन",
+  },
+  "header.profileSubtitle": {
+    en: "Your charts, reports & tokens",
+    hi: "आपकी कुंडली, रिपोर्ट व टोकन",
+  },
+  "header.menuTrust": {
+    en: "Trusted by 2,400+ seekers",
+    hi: "2,400+ जिज्ञासुओं का भरोसा",
+  },
+  "header.menuAuthPrompt": {
+    en: "Begin your cosmic journey",
+    hi: "अपनी दिव्य यात्रा शुरू करें",
+  },
 
   // ─── Hero Section ────────────────────────────────────────
   "hero.badge": { en: "Celestial Guidance", hi: "दिव्य मार्गदर्शन" },
@@ -113,15 +133,15 @@ const translations = {
     hi: "नमस्ते! मैं 35 वर्षों के अनुभव के साथ वैदिक ज्योतिषी हूँ। मुझसे अपनी कुंडली, राशिफल, करियर, रिश्तों या किसी भी जीवन मार्गदर्शन के बारे में पूछें।",
   },
   "chat.suggestion1": {
-    en: "🌟 Tell me about my kundali",
-    hi: "🌟 मेरी कुंडली बताएं",
+    en: "Tell me about my kundali",
+    hi: "मेरी कुंडली बताएं",
   },
-  "chat.suggestion2": { en: "💼 Career guidance", hi: "💼 करियर मार्गदर्शन" },
+  "chat.suggestion2": { en: "Career guidance", hi: "करियर मार्गदर्शन" },
   "chat.suggestion3": {
-    en: "💕 Marriage & relationships",
-    hi: "💕 विवाह और रिश्ते",
+    en: "Marriage & relationships",
+    hi: "विवाह और रिश्ते",
   },
-  "chat.suggestion4": { en: "🔮 Today's rashifal", hi: "🔮 आज का राशिफल" },
+  "chat.suggestion4": { en: "Today's rashifal", hi: "आज का राशिफल" },
   "chat.inputPlaceholder": {
     en: "Ask Pandit Ji anything...",
     hi: "पंडित जी से कुछ भी पूछें...",
@@ -148,8 +168,8 @@ const translations = {
     hi: "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जाँचें।",
   },
   "chat.errorMessage": {
-    en: "🙏 Sorry, I am a bit busy right now. Please try again shortly.",
-    hi: "🙏 क्षमा करें, मैं अभी थोड़ा व्यस्त हूँ। कृपया थोड़ी देर में पुनः प्रयास करें।",
+    en: "Sorry, I am a bit busy right now. Please try again shortly.",
+    hi: "क्षमा करें, मैं अभी थोड़ा व्यस्त हूँ। कृपया थोड़ी देर में पुनः प्रयास करें।",
   },
   "chat.deleteChat": { en: "Delete chat", hi: "चैट हटाएं" },
 

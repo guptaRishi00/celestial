@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
 import { LanguageProvider } from "@/lib/LanguageContext";
+import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const voyage = localFont({
   src: [
@@ -62,8 +62,15 @@ const kobe = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Celestial Editorial",
-  description: "Astrology design system exploration",
+  title: "Future Dekho — Vedic Astrology & Kundli",
+  description:
+    "Discover the cosmic blueprint in your birth chart. Vedic kundli reports, dasha timing, and guidance from Pandit Ji.",
+  openGraph: {
+    title: "Future Dekho — Vedic Astrology & Kundli",
+    description:
+      "Discover the cosmic blueprint in your birth chart. Vedic kundli reports, dasha timing, and guidance from Pandit Ji.",
+    images: ["/logo.png"],
+  },
 };
 
 export default function RootLayout({
@@ -74,14 +81,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(voyage.variable, kobe.variable, "font-sans", geist.variable)}
+      className={cn(
+        voyage.variable,
+        kobe.variable,
+        "font-sans",
+        geist.variable,
+      )}
     >
       <body className="min-h-screen bg-surface text-on-surface font-kobe antialiased">
-        <LanguageProvider>
-          {children}
-        </LanguageProvider>
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );
 }
-

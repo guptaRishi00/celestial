@@ -1,15 +1,19 @@
+import { YOGA_CITATIONS } from "./classical-grounding";
 import {
   EXALTATION,
   KENDRA,
   OWN_SIGNS,
+  type PlanetName,
   SIGN_LORD,
   TRIKONA,
-  type PlanetName,
 } from "./constants";
 import type { PlanetPosition, YogaResult } from "./types";
 
-function findPlanet(planets: PlanetPosition[], name: PlanetName): PlanetPosition | undefined {
-  return planets.find(p => p.name === name);
+function findPlanet(
+  planets: PlanetPosition[],
+  name: PlanetName,
+): PlanetPosition | undefined {
+  return planets.find((p) => p.name === name);
 }
 
 function inOwnSign(p: PlanetPosition): boolean {
@@ -35,7 +39,10 @@ function houseDiff(a: number, b: number): number {
 /**
  * Detects classical Vedic yogas. Conservative — only flags clearly-formed ones.
  */
-export function detectYogas(planets: PlanetPosition[], ascendantSign: number): YogaResult[] {
+export function detectYogas(
+  planets: PlanetPosition[],
+  ascendantSign: number,
+): YogaResult[] {
   const out: YogaResult[] = [];
   const moon = findPlanet(planets, "Moon");
   const sun = findPlanet(planets, "Sun");
@@ -52,7 +59,8 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
       out.push({
         name: "Gajakesari Yoga",
         type: "auspicious",
-        description: "Jupiter in a kendra (1st/4th/7th/10th) from Moon — confers intelligence, fame, eloquence, and a virtuous reputation. Native often gains respect from learned people.",
+        description:
+          "Jupiter in a kendra (1st/4th/7th/10th) from Moon — confers intelligence, fame, eloquence, and a virtuous reputation. Native often gains respect from learned people.",
         involves: ["Moon", "Jupiter"],
         strength: jupiter.house === moon.house ? "strong" : "moderate",
       });
@@ -64,7 +72,8 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
     out.push({
       name: "Chandra-Mangal Yoga",
       type: "auspicious",
-      description: "Moon and Mars conjunct — a powerful wealth-generating combination especially through business, real estate, or self-made ventures. Native is enterprising and emotionally driven toward action.",
+      description:
+        "Moon and Mars conjunct — a powerful wealth-generating combination especially through business, real estate, or self-made ventures. Native is enterprising and emotionally driven toward action.",
       involves: ["Moon", "Mars"],
       strength: "strong",
     });
@@ -76,7 +85,8 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
     out.push({
       name: "Budha-Aditya Yoga",
       type: "auspicious",
-      description: "Sun and Mercury conjunct — bestows sharp intellect, articulate communication, and success in fields requiring analysis or leadership. Strongest when Mercury is not deeply combust.",
+      description:
+        "Sun and Mercury conjunct — bestows sharp intellect, articulate communication, and success in fields requiring analysis or leadership. Strongest when Mercury is not deeply combust.",
       involves: ["Sun", "Mercury"],
       strength: diff > 5 ? "strong" : "moderate",
     });
@@ -84,11 +94,31 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
 
   // Pancha Mahapurusha Yogas — Mars/Mercury/Jupiter/Venus/Saturn in own/exalted sign in kendra
   const mahaPurushaMap: { planet: PlanetName; name: string; desc: string }[] = [
-    { planet: "Mars",    name: "Ruchaka Yoga",  desc: "Confers courage, leadership, military/athletic prowess, commanding personality, and victory over enemies." },
-    { planet: "Mercury", name: "Bhadra Yoga",   desc: "Bestows intellect, eloquence, wit, business acumen, longevity, and respect among the learned." },
-    { planet: "Jupiter", name: "Hamsa Yoga",    desc: "Grants wisdom, spirituality, moral authority, wealth through righteous means, and graceful demeanor." },
-    { planet: "Venus",   name: "Malavya Yoga",  desc: "Confers beauty, luxury, artistic talent, harmonious relationships, and refined tastes." },
-    { planet: "Saturn",  name: "Sasa Yoga",     desc: "Bestows discipline, authority over masses, leadership in organizations, and enduring success through perseverance." },
+    {
+      planet: "Mars",
+      name: "Ruchaka Yoga",
+      desc: "Confers courage, leadership, military/athletic prowess, commanding personality, and victory over enemies.",
+    },
+    {
+      planet: "Mercury",
+      name: "Bhadra Yoga",
+      desc: "Bestows intellect, eloquence, wit, business acumen, longevity, and respect among the learned.",
+    },
+    {
+      planet: "Jupiter",
+      name: "Hamsa Yoga",
+      desc: "Grants wisdom, spirituality, moral authority, wealth through righteous means, and graceful demeanor.",
+    },
+    {
+      planet: "Venus",
+      name: "Malavya Yoga",
+      desc: "Confers beauty, luxury, artistic talent, harmonious relationships, and refined tastes.",
+    },
+    {
+      planet: "Saturn",
+      name: "Sasa Yoga",
+      desc: "Bestows discipline, authority over masses, leadership in organizations, and enduring success through perseverance.",
+    },
   ];
   for (const m of mahaPurushaMap) {
     const p = findPlanet(planets, m.planet);
@@ -105,12 +135,18 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
 
   // Neecha Bhanga — a debilitated planet whose debilitation is cancelled
   for (const p of planets) {
-    const debilSign = (EXALTATION[p.name] ? ((EXALTATION[p.name]! + 6 - 1) % 12) + 1 : null);
+    const debilSign = EXALTATION[p.name]
+      ? ((EXALTATION[p.name]! + 6 - 1) % 12) + 1
+      : null;
     if (debilSign && p.sign === debilSign) {
       // Cancellation: lord of debilitation sign is in kendra from ascendant or Moon
       const debilLord = SIGN_LORD[debilSign];
       const lordPos = findPlanet(planets, debilLord);
-      if (lordPos && (inKendra(lordPos) || (moon && houseDiff(lordPos.house, moon.house) % 3 === 1))) {
+      if (
+        lordPos &&
+        (inKendra(lordPos) ||
+          (moon && houseDiff(lordPos.house, moon.house) % 3 === 1))
+      ) {
         out.push({
           name: "Neecha Bhanga Raja Yoga",
           type: "auspicious",
@@ -124,9 +160,13 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
 
   // Dhana Yoga (simplified) — lords of 2/5/9/11 conjunct or in mutual kendra/trikona
   const wealthHouses = [2, 5, 9, 11];
-  const wealthLordSigns = wealthHouses.map(h => ((ascendantSign - 1 + h - 1) % 12) + 1);
-  const wealthLords = wealthLordSigns.map(s => SIGN_LORD[s]);
-  const wealthLordPositions = wealthLords.map(l => findPlanet(planets, l)).filter(Boolean) as PlanetPosition[];
+  const wealthLordSigns = wealthHouses.map(
+    (h) => ((ascendantSign - 1 + h - 1) % 12) + 1,
+  );
+  const wealthLords = wealthLordSigns.map((s) => SIGN_LORD[s]);
+  const wealthLordPositions = wealthLords
+    .map((l) => findPlanet(planets, l))
+    .filter(Boolean) as PlanetPosition[];
   for (let i = 0; i < wealthLordPositions.length; i++) {
     for (let j = i + 1; j < wealthLordPositions.length; j++) {
       const a = wealthLordPositions[i];
@@ -146,8 +186,12 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
   }
 
   // Raja Yoga — Kendra lord + Trikona lord conjunct
-  const kendraLords = KENDRA.map(h => SIGN_LORD[((ascendantSign - 1 + h - 1) % 12) + 1]);
-  const trikonaLords = TRIKONA.map(h => SIGN_LORD[((ascendantSign - 1 + h - 1) % 12) + 1]);
+  const kendraLords = KENDRA.map(
+    (h) => SIGN_LORD[((ascendantSign - 1 + h - 1) % 12) + 1],
+  );
+  const trikonaLords = TRIKONA.map(
+    (h) => SIGN_LORD[((ascendantSign - 1 + h - 1) % 12) + 1],
+  );
   const seen = new Set<string>();
   for (const kl of kendraLords) {
     for (const tl of trikonaLords) {
@@ -169,17 +213,29 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
     }
   }
 
-  // Kemadruma Yoga — Moon with no planets in 2nd/12th from it and not joined by any planet (challenging)
+  // Kemadruma Yoga — Moon with no planets in 2nd/12th from it and not joined by any planet (challenging).
+  // Classically cancelled if Moon is in a kendra from Lagna — that condition is now actually
+  // checked, rather than just mentioned in the description while still always firing.
   if (moon) {
     const sign2 = (moon.sign % 12) + 1;
     const sign12 = ((moon.sign + 10) % 12) + 1;
-    const moonSignOccupants = planets.filter(p => p.name !== "Moon" && p.sign === moon.sign);
-    const adjacent = planets.filter(p => p.name !== "Moon" && (p.sign === sign2 || p.sign === sign12));
-    if (moonSignOccupants.length === 0 && adjacent.length === 0) {
+    const moonSignOccupants = planets.filter(
+      (p) => p.name !== "Moon" && p.sign === moon.sign,
+    );
+    const adjacent = planets.filter(
+      (p) => p.name !== "Moon" && (p.sign === sign2 || p.sign === sign12),
+    );
+    const cancelledByKendra = inKendra(moon);
+    if (
+      moonSignOccupants.length === 0 &&
+      adjacent.length === 0 &&
+      !cancelledByKendra
+    ) {
       out.push({
         name: "Kemadruma Yoga",
         type: "challenging",
-        description: "Moon stands isolated with no planets in adjacent signs (2nd/12th from Moon) and no conjunction — indicates emotional isolation, struggles in early life, and need for self-reliance. Often cancelled if Moon receives strong aspects from benefics, or if Moon is in a kendra from Lagna.",
+        description:
+          "Moon stands isolated with no planets in adjacent signs (2nd/12th from Moon), no conjunction, and Moon is not in a kendra from Lagna — indicates emotional isolation, struggles in early life, and a need for self-reliance.",
         involves: ["Moon"],
         strength: "moderate",
       });
@@ -188,7 +244,7 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
 
   // Vipreet Raj Yoga (simplified) — 6/8/12 lords in 6/8/12 from each other
   const dustanaHouses = [6, 8, 12];
-  const dustanaLords = dustanaHouses.map(h => ({
+  const dustanaLords = dustanaHouses.map((h) => ({
     house: h,
     lord: SIGN_LORD[((ascendantSign - 1 + h - 1) % 12) + 1],
   }));
@@ -197,8 +253,15 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
     for (let j = i + 1; j < dustanaLords.length; j++) {
       const a = findPlanet(planets, dustanaLords[i].lord);
       const b = findPlanet(planets, dustanaLords[j].lord);
-      if (a && b && dustanaHouses.includes(a.house) && dustanaHouses.includes(b.house)) {
-        const key = [dustanaLords[i].lord, dustanaLords[j].lord].sort().join("-");
+      if (
+        a &&
+        b &&
+        dustanaHouses.includes(a.house) &&
+        dustanaHouses.includes(b.house)
+      ) {
+        const key = [dustanaLords[i].lord, dustanaLords[j].lord]
+          .sort()
+          .join("-");
         if (vipreetSeen.has(key)) continue;
         vipreetSeen.add(key);
         out.push({
@@ -210,6 +273,13 @@ export function detectYogas(planets: PlanetPosition[], ascendantSign: number): Y
         });
       }
     }
+  }
+
+  // Attach classical-text citations where available, so the LLM layer has a verbatim
+  // source to build on instead of free-generating an unsourced description.
+  for (const yoga of out) {
+    const citation = YOGA_CITATIONS[yoga.name];
+    if (citation) yoga.citation = citation;
   }
 
   return out;

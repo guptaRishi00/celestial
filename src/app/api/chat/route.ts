@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { cookies } from "next/headers";
 import { classifyIntent } from "@/lib/ai/intent";
 import { streamPersonaResponse } from "@/lib/ai/persona";
-import { computeNatalChart } from "@/lib/astrology/chart";
+import { CHART_VERSION, computeNatalChart } from "@/lib/astrology/chart";
 import {
   enrichTransitsForChart,
   getDailyTransits,
@@ -10,9 +10,9 @@ import {
 import type { NatalChart, TransitInfo } from "@/lib/astrology/types";
 import { getCurrentUser } from "@/lib/auth";
 import {
+  CHAT_MESSAGE_TOKEN_COST,
   ensureUserBillingFields,
   getChatTokens,
-  CHAT_MESSAGE_TOKEN_COST,
   type UserBillingDocument,
 } from "@/lib/billing";
 import { getDb } from "@/lib/mongodb";
@@ -37,7 +37,9 @@ async function getOrComputeChart(
   userId: ObjectId,
   dbUser: ChatDbUser,
 ): Promise<NatalChart | null> {
-  if (dbUser.natalChart?.version) return dbUser.natalChart;
+  // Compare against the current CHART_VERSION, not just truthiness — otherwise a
+  // stale cached chart from an older computation (e.g. pre-bugfix) is served forever.
+  if (dbUser.natalChart?.version === CHART_VERSION) return dbUser.natalChart;
 
   // 🔍 DEBUG LOGS: Check if fields are actually available
   console.log("=== PANDIT JI KUNDALI DEBUG ===");
@@ -91,15 +93,15 @@ function getFallbackResponse(
 ): string {
   if (lang === "hi") {
     if (!hasChart) {
-      return `🙏 नमस्ते ${userName || "बेटा"}! मैं पंडित शास्त्री जी हूँ। आपकी कुंडली बनाने के लिए मुझे आपकी जन्म तिथि, समय और स्थान चाहिए। प्रोफ़ाइल में विवरण भर दीजिए तो मैं आपके ग्रहों की स्थिति देख सकता हूँ। शुभ हो! ✨`;
+      return `नमस्ते ${userName || "बेटा"}! मैं पंडित शास्त्री जी हूँ। आपकी कुंडली बनाने के लिए मुझे आपकी जन्म तिथि, समय और स्थान चाहिए। प्रोफ़ाइल में विवरण भर दीजिए तो मैं आपके ग्रहों की स्थिति देख सकता हूँ। शुभ हो!`;
     }
-    return `🙏 नमस्ते ${userName || "बेटा"}! मेरे पास आपकी कुंडली तो है, लेकिन अभी सेवा में छोटी सी रुकावट आ रही है। थोड़ी देर में फिर कोशिश कीजिए। भगवान आपका भला करे। 🙏`;
+    return `नमस्ते ${userName || "बेटा"}! मेरे पास आपकी कुंडली तो है, लेकिन अभी सेवा में छोटी सी रुकावट आ रही है। थोड़ी देर में फिर कोशिश कीजिए। भगवान आपका भला करे।`;
   }
 
   if (!hasChart) {
-    return `🙏 Namaste ${userName || "beta"}! Main Pandit Shastri Ji hoon. Aapki kundali banane ke liye mujhe aapka janam tithi, samay aur sthaan chahiye. Profile mein details bhar dijiye toh main aapke graho ki sthiti dekh sakta hoon. Shubh ho! ✨`;
+    return `Namaste ${userName || "beta"}! Main Pandit Shastri Ji hoon. Aapki kundali banane ke liye mujhe aapka janam tithi, samay aur sthaan chahiye. Profile mein details bhar dijiye toh main aapke graho ki sthiti dekh sakta hoon. Shubh ho!`;
   }
-  return `🙏 Namaste ${userName || "beta"}! Mere paas aapki kundali toh hai, lekin abhi seva mein chhoti si rukawat aa rahi hai. Thodi der mein phir koshish kijiye. Bhagwan aapka bhala kare. 🙏`;
+  return `Namaste ${userName || "beta"}! Mere paas aapki kundali toh hai, lekin abhi seva mein chhoti si rukawat aa rahi hai. Thodi der mein phir koshish kijiye. Bhagwan aapka bhala kare.`;
 }
 
 export async function POST(request: Request) {
@@ -135,7 +137,7 @@ export async function POST(request: Request) {
         return Response.json({
           requiresLogin: true,
           message:
-            "To continue your consultation with Pandit Ji, please create an account. Your cosmic journey awaits! 🙏",
+            "To continue your consultation with Pandit Ji, please create an account. Your cosmic journey awaits.",
         });
       }
       cookieStore.set("celestial_guest_count", String(guestCount + 1), {

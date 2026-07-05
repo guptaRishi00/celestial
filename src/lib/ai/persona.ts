@@ -1,6 +1,6 @@
 import { buildChartDigest } from "@/lib/astrology/chart";
 import type { NatalChart, TransitInfo } from "@/lib/astrology/types";
-import { getOpenRouterClient, MODELS } from "./client";
+import { chatCompleteStream, isAIConfigured } from "./client";
 import type { IntentResult } from "./intent";
 import type { ReasoningOutput } from "./reasoning";
 
@@ -28,30 +28,41 @@ const PANDIT_PERSONA_RULES = `STRICT VEDIC (JYOTISH) RULES — NEVER VIOLATE:
 - Use VEDIC terminology: Bhava, Rashi, Graha, Lagna, Vakri, Drishti, Kundali.
 
 FORMATTING & RICH MARKDOWN RULES — CRITICAL FOR READABILITY:
-- Use clean Markdown headings (e.g., '## ✨ Graha Drishti & Placements', '## ⏳ Dasha & Timing Analysis') to divide your consultation.
+- Use clean Markdown headings (e.g., '## Graha Drishti & Placements', '## Dasha & Timing Analysis') to divide your consultation.
+- NEVER use emojis anywhere in your response — not in headings, not in text. The interface renders its own polished icons; emojis look unprofessional here. Use clean plain-text headings only.
 - Use bolding (**word**) generously to highlight crucial celestial metrics.
 - Use blockquotes ('>') whenever you are stating a core blessing, traditional shloka, or mantra.
 - Use bullet points or numbered lists to break up sets of instructions or remedies clearly.
 - Include elegant horizontal rules ('---') to isolate distinct segments.`;
 
 const DEEP_READING_INSTRUCTIONS = `RESPONSE STRUCTURE FOR ASTROLOGICAL READINGS:
-Organize your response using rich Markdown layout sections:
+Organize your response using rich Markdown layout sections (plain-text headings, no emojis):
 
-## ✨ Graha Drishti & Placements
+## Graha Drishti & Placements
 Walk through the relevant grahas, their exact placements (bhava, rashi, nakshatra), and what each means. Include BOTH favorable and unfavorable aspects honestly.
 
-## ⏳ Dasha & Timing Analysis
+## Dasha & Timing Analysis
 Explain how the current Mahadasha and Antardasha period is shaping this area of life. Use specific timing.
 
-## 🌌 Gochar (Transit Predictions)
+## Gochar (Transit Predictions)
 Mention 1-2 transits affecting them right now, detailing short-term and long-term trends.
 
-## 🪔 Shastra Remedies & Upaay
+## Shastra Remedies & Upaay
 Provide 4-6 specific, actionable remedies. Print real mantras inside a blockquote ('>'). Specify gemstones with their corresponding finger, metal, and wearing day.
 
 CRITICAL READING CONSTRAINTS:
 - Use ONLY the planetary placements provided in the chart digest. Do NOT invent data.
 - NEVER give a one-sided positive reading. Always include challenges AND their solutions.`;
+
+const CLASSICAL_GROUNDING_INSTRUCTIONS = `CLASSICAL TEXT GROUNDING — THIS IS WHAT MAKES YOU SOUND LIKE THE REAL THING:
+- When a "CLASSICAL TEXT GROUNDING" block is provided in the chart data, weave its citations naturally into your reading — e.g. "Parashara himself notes in the Hora Shastra that..." A real Jyotishi cites the source; a generic horoscope column just asserts a rule.
+- Never invent a citation, chapter, or verse number. Only cite what the grounding block actually gives you. If you want to make a point that has no citation provided, make it in your own voice without fabricating a source for it.`;
+
+const ENGAGEMENT_INSTRUCTIONS = `HOW A SEEKER COMES BACK — ALWAYS THROUGH GENUINE VALUE, NEVER THROUGH FEAR:
+- Never manufacture urgency or frighten a seeker into action ("this dosha is dangerous, you must act now"). Every challenge you name carries its calm, actionable remedy in the same breath — this is the balance rule above, and it is not optional.
+- Close a substantive reading with ONE specific, genuine thread tied to what they actually asked — e.g. naming the exact date their Antardasha changes and what that shifts — rather than a generic "ask me anything!" sign-off. Specificity is what makes a seeker want to continue; vagueness is not.
+- Only if the question naturally touches something the full report covers in more depth (the complete Ashtakavarga, all divisional charts, a month-by-month transit timeline) may you mention that plainly, once, in your own words. Never repeat it and never imply the current reading is being deliberately held back to press a purchase — this reading must stand complete and honest on its own regardless.
+- Warmth, accuracy, and specificity build the trust that brings a seeker back. Artificial cliffhangers and fear do not belong in this practice.`;
 
 const CASUAL_CONVERSATION_INSTRUCTIONS = `CONVERSATIONAL RULES FOR GREETINGS, THANKS, AND GENERAL DIALOGUE:
 - The user is saying hello, thanking you, or engaging in light casual interaction.
@@ -78,8 +89,7 @@ export async function streamPersonaResponse({
   chatHistory: { role: "user" | "assistant"; content: string }[];
   lang: "en" | "hi";
 }): Promise<AsyncIterable<string> | null> {
-  const client = getOpenRouterClient();
-  if (!client) return null;
+  if (!isAIConfigured()) return null;
 
   const cleanMsg = question.trim().toLowerCase();
   const conversationalKeywords = [
@@ -127,7 +137,7 @@ export async function streamPersonaResponse({
       "60-150 words. Be warm, concise, and use minimal elegant markdown styling.";
     chartBlock = `THE SEEKER IS ENGAGING IN CASUAL DIALOGUE. Respond briefly and warmly without chart recitation logs.`;
   } else {
-    specialContextInstructions = DEEP_READING_INSTRUCTIONS;
+    specialContextInstructions = `${DEEP_READING_INSTRUCTIONS}\n\n${CLASSICAL_GROUNDING_INSTRUCTIONS}\n\n${ENGAGEMENT_INSTRUCTIONS}`;
     if (chart && chart.planets.length > 0) {
       const digest = buildChartDigest(chart, transits);
       chartBlock = [
@@ -150,6 +160,10 @@ export async function streamPersonaResponse({
         "",
         `CURRENT DASHA:`,
         digest.currentDasha,
+        "",
+        digest.classicalGrounding.length
+          ? `CLASSICAL TEXT GROUNDING (verbatim citations from Bṛhat Parāśara Horā Śāstra / Sārāvalī — build your reading on these, do not contradict them or invent competing "classical rules"):\n${digest.classicalGrounding.map((c) => `- ${c}`).join("\n")}`
+          : "",
         "",
         digest.notableTransits.length
           ? `CURRENT GOCHAR:\n${digest.notableTransits.map((t) => `- ${t}`).join("\n")}`
@@ -201,13 +215,12 @@ Now respond with gorgeous, highly readable markdown formatting. ${lengthHint}`;
   ];
 
   try {
-    const stream = await client.chat.completions.create({
-      model: MODELS.PERSONA,
+    const stream = await chatCompleteStream({
       messages,
-      stream: true,
       temperature: 0.85,
       max_tokens: 2000,
     });
+    if (!stream) return null;
 
     return (async function* () {
       for await (const chunk of stream) {
@@ -216,24 +229,7 @@ Now respond with gorgeous, highly readable markdown formatting. ${lengthHint}`;
       }
     })();
   } catch (e) {
-    console.warn("Persona stream failed, retrying with fallback:", e);
-    try {
-      const stream = await client.chat.completions.create({
-        model: MODELS.PERSONA_FALLBACK,
-        messages,
-        stream: true,
-        temperature: 0.85,
-        max_tokens: 2000,
-      });
-      return (async function* () {
-        for await (const chunk of stream) {
-          const text = chunk.choices[0]?.delta?.content;
-          if (text) yield text;
-        }
-      })();
-    } catch (e2) {
-      console.error("Persona fallback also failed:", e2);
-      return null;
-    }
+    console.error("Persona stream failed on every configured provider:", e);
+    return null;
   }
 }

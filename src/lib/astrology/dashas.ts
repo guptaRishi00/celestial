@@ -1,4 +1,9 @@
-import { DASHA_SEQUENCE, DASHA_YEARS, NAKSHATRAS, type PlanetName } from "./constants";
+import {
+  DASHA_SEQUENCE,
+  DASHA_YEARS,
+  NAKSHATRAS,
+  type PlanetName,
+} from "./constants";
 import type { DashaPeriod, DashaTimeline, PlanetPosition } from "./types";
 
 const NAK_SPAN = 360 / 27; // 13.3333°
@@ -22,7 +27,11 @@ function dashaIndexOf(planet: PlanetName): number {
  * Algorithm: Moon's nakshatra determines birth dasha. Time remaining in birth
  * dasha = (1 - fractionElapsedInNakshatra) × dashaYears.
  */
-export function computeVimshottariDasha(moon: PlanetPosition, dob: string, birthTime: string): DashaTimeline {
+export function computeVimshottariDasha(
+  moon: PlanetPosition,
+  dob: string,
+  birthTime: string,
+): DashaTimeline {
   const birthDate = new Date(`${dob}T${birthTime || "12:00"}:00Z`);
 
   const nakIdx = moon.nakshatraIndex;
@@ -38,12 +47,21 @@ export function computeVimshottariDasha(moon: PlanetPosition, dob: string, birth
   // Remaining years in the birth dasha
   const birthDashaTotal = DASHA_YEARS[birthLord];
   const remainingInBirthDasha = birthDashaTotal * (1 - fractionElapsed);
+  const elapsedInBirthDasha = birthDashaTotal - remainingInBirthDasha;
+
+  // The birth mahadasha notionally began before actual birth (the native was born
+  // partway through it). Antardashas must be sized off the FULL classical dasha-lord
+  // years anchored at that notional start — NOT off the truncated remaining balance —
+  // otherwise every antardasha lord and boundary within the birth mahadasha is wrong.
+  const notionalMahaStart = addYears(birthDate, -elapsedInBirthDasha);
 
   // Build mahadasha timeline starting from birth
   const mahas: DashaPeriod[] = [];
   let cursor = new Date(birthDate);
 
-  // First (partial) mahadasha — from birth to end of birth dasha
+  // First (partial) mahadasha — from birth to end of birth dasha. Displayed years/
+  // dates reflect what's actually left to experience; sub-period sizing is handled
+  // separately below via notionalMahaStart.
   const firstEnd = addYears(cursor, remainingInBirthDasha);
   mahas.push({
     lord: birthLord,
@@ -73,17 +91,41 @@ export function computeVimshottariDasha(moon: PlanetPosition, dob: string, birth
 
   // Find current mahadasha
   const now = Date.now();
-  const currentMaha = mahas.find(m => new Date(m.startDate).getTime() <= now && new Date(m.endDate).getTime() > now)
-    ?? mahas[0];
+  const currentMaha =
+    mahas.find(
+      (m) =>
+        new Date(m.startDate).getTime() <= now &&
+        new Date(m.endDate).getTime() > now,
+    ) ?? mahas[0];
 
-  // Compute antardashas within current mahadasha
-  const antars = buildSubPeriods(currentMaha, 2);
-  const currentAntar = antars.find(a => new Date(a.startDate).getTime() <= now && new Date(a.endDate).getTime() > now)
-    ?? antars[0];
+  // Compute antardashas within current mahadasha. For the birth mahadasha, size them
+  // off the full classical duration anchored at the notional (pre-birth) start date —
+  // for every later mahadasha, currentMaha already carries its true full-length years.
+  const isBirthMaha = currentMaha === mahas[0];
+  const antarParent: DashaPeriod = isBirthMaha
+    ? {
+        lord: birthLord,
+        startDate: isoDate(notionalMahaStart),
+        endDate: isoDate(addYears(notionalMahaStart, birthDashaTotal)),
+        years: birthDashaTotal,
+        level: 1,
+      }
+    : currentMaha;
+  const antars = buildSubPeriods(antarParent, 2);
+  const currentAntar =
+    antars.find(
+      (a) =>
+        new Date(a.startDate).getTime() <= now &&
+        new Date(a.endDate).getTime() > now,
+    ) ?? antars[0];
 
   // Pratyantar within current antar
   const pratyantars = buildSubPeriods(currentAntar, 3);
-  const currentPratyantar = pratyantars.find(p => new Date(p.startDate).getTime() <= now && new Date(p.endDate).getTime() > now);
+  const currentPratyantar = pratyantars.find(
+    (p) =>
+      new Date(p.startDate).getTime() <= now &&
+      new Date(p.endDate).getTime() > now,
+  );
 
   // Next mahadashas (after current one)
   const idxOfCurrent = mahas.indexOf(currentMaha);
@@ -109,7 +151,7 @@ function buildSubPeriods(parent: DashaPeriod, level: 2 | 3): DashaPeriod[] {
   const out: DashaPeriod[] = [];
   let cursor = new Date(parent.startDate);
   const parentEnd = new Date(parent.endDate).getTime();
-  let seqIdx = dashaIndexOf(parent.lord);
+  const seqIdx = dashaIndexOf(parent.lord);
 
   for (let i = 0; i < 9; i++) {
     const subLord = DASHA_SEQUENCE[(seqIdx + i) % DASHA_SEQUENCE.length];

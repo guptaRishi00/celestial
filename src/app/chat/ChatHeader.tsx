@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import Image from "next/image";
 import { useLanguage } from "@/lib/LanguageContext";
 
 export default function ChatHeader() {
@@ -8,8 +8,17 @@ export default function ChatHeader() {
 
   return (
     <header className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-4 border-b border-white/8">
-      <a href="/" className="flex items-center gap-1.5 sm:gap-2">
-        {/* <span className="text-hero-accent text-lg sm:text-xl">✦</span> */}
+      <a href="/" className="flex items-center gap-2 sm:gap-2.5">
+        <span className="relative block h-7 w-7 sm:h-8 sm:w-8 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-white/12 shadow-[0_0_12px_-3px_rgba(196,161,255,0.55)]">
+          <Image
+            src="/logo.png"
+            alt="Future Dekho"
+            width={58}
+            height={58}
+            priority
+            className="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2"
+          />
+        </span>
         <span className="font-voyage text-lg sm:text-xl font-bold text-hero-accent tracking-wide">
           Future Dekho
         </span>
